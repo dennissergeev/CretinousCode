@@ -6,7 +6,7 @@ Created on Sat Nov 12 15:05:47 2016
 """
 
 from IPython import get_ipython
-get_ipython().magic('reset -f')
+#get_ipython().magic('reset -f')
 import sys
 #sys.path.append('PythFunctions')
 import numpy as np
@@ -86,22 +86,16 @@ SIMAT = np.empty((int(180/LATRES),int(360/LONGRES))) #Solar Insolation
 SIALBMAT = np.empty((int(180/LATRES),int(360/LONGRES))) #Solar Insolation * (1-AlBEDO)
 PERCMAT = np.empty((int(180/LATRES),int(360/LONGRES))) #Solar Insolation Percentage
 
+LATMAT[:] = np.arange(90-LATRES/2, -90+LATRES/2-1, -LATRES)[:, np.newaxis]
 
-for i in range(0,len(LATMAT[0])):
-    LATMAT[:,i]=np.arange(90-LATRES/2,-90+LATRES/2-1,-LATRES)
-    LATMAT
-    
 for i in range(0,len(LONGMAT)):
     LONGMAT[i,:]=np.arange(-180+LONGRES/2,180-LONGRES/2+1,LONGRES)
-    LONGMAT
-    
+
 for i in range(0,len(LATDX[0])):
     LATDX[:,i]=(R*np.pi)/int(180/LATRES)
-    
-    
+
 for i in range(0,len(LONGDX)):
     LONGDX[i,:]=((R*np.cos(np.deg2rad(LATMAT[i,0])))*2*np.pi)/int(360/LONGRES)
-    
 
 STABILITY=(0.5*np.minimum(LONGDX*LONGDX,LATDX*LATDX))/Ts
 
