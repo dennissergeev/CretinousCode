@@ -46,23 +46,22 @@ opt2 = 3
 
 #PoleFrac=0.99
 SOLAR_CONSTANT = 1361
-ALB = 0.3
+ALBEDO = 0.3
 LATRES = 30
 LONGRES = 60
-OIT = -273.15 #initial temp of water degC
-AIT = -273.15
-R = 6371000 #m
-U = 90/LATRES #number of cells vertically for just 1/4
-SB = 5.67E-8
-#AA = 0.7814
-AA = 0.7814
-poleTi = 0
-Ts = 3600
-NTs = 365*24*1.5
-KX = 800000 #diffusion constant in X #90000
-KY = 800000#2500000 #diffusion constant in Y
-kick=0#9999#99999
-OD=1
+OCEAN_INITIAL_TEMP = -273.15 #initial temp of water degC
+ATMOSPHERE_INITIAL_TEMP = -273.15
+EARTH_RADIUS_M = 6371000 #m
+n_lat = 90/LATRES #number of cells vertically for just 1/4
+STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
+#ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
+ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
+DELTA_TIME_SECS = 3600
+NUMBER_TIME_STEPS = 365*24*1.5
+DIFFUSION_X_CONSTANT = 800000 #diffusion constant in X #90000
+DIFFUSION_Y_CONSTANT = 800000#2500000 #diffusion constant in Y
+LASER_FROM_SPACE=0#9999#99999
+OCEAN_DEPTH_M=1
 
 
 xticks= np.arange(-180,181,LONGRES)
@@ -92,14 +91,14 @@ for i in range(0,len(LONGMAT)):
     LONGMAT[i,:]=np.arange(-180+LONGRES/2,180-LONGRES/2+1,LONGRES)
 
 for i in range(0,len(LATDX[0])):
-    LATDX[:,i]=(R*np.pi)/int(180/LATRES)
+    LATDX[:,i]=(EARTH_RADIUS_M*np.pi)/int(180/LATRES)
 
 for i in range(0,len(LONGDX)):
-    LONGDX[i,:]=((R*np.cos(np.deg2rad(LATMAT[i,0])))*2*np.pi)/int(360/LONGRES)
+    LONGDX[i,:]=((EARTH_RADIUS_M*np.cos(np.deg2rad(LATMAT[i,0])))*2*np.pi)/int(360/LONGRES)
 
-STABILITY=(0.5*np.minimum(LONGDX*LONGDX,LATDX*LATDX))/Ts
+STABILITY=(0.5*np.minimum(LONGDX*LONGDX,LATDX*LATDX))/DELTA_TIME_SECS
 
-ALBMAT[:] = ALB
+ALBMAT[:] = ALBEDO
 
 
 ###############################################################################       
@@ -113,11 +112,11 @@ C=np.empty((int(180/LATRES),1))
 D=np.empty((int(180/LATRES),1))
 E=np.empty((int(180/LATRES),1))
  
-for i in range(0,int(U*2)):   
+for i in range(0,int(n_lat*2)):   
     A[i,0]=(i*LATRES)-90 #lower limit, further S, more negative
     B[i,0]=((i+1)*LATRES)-90; #upper limit, further N, more positive
-    C[i,0]=(2*np.pi*(R**2))-(2*np.pi*(R**2)*(np.sin(np.deg2rad(B[i,0]))))
-    D[i,0]=(2*np.pi*(R**2))-(2*np.pi*(R**2)*(np.sin(np.deg2rad(A[i,0]))))
+    C[i,0]=(2*np.pi*(EARTH_RADIUS_M**2))-(2*np.pi*(EARTH_RADIUS_M**2)*(np.sin(np.deg2rad(B[i,0]))))
+    D[i,0]=(2*np.pi*(EARTH_RADIUS_M**2))-(2*np.pi*(EARTH_RADIUS_M**2)*(np.sin(np.deg2rad(A[i,0]))))
 
 E=D-C
 
@@ -134,17 +133,17 @@ AreaAReShaped=AreaA.reshape(SIMAT.shape[0],SIMAT.shape[1],1) #reshaped to aid wi
 #FOR THE FOLLOWING sum(sum(FOLLOWING)) to get global (as opposed to cell values)
 FracAreaA = AreaA/(sum(sum(AreaA))) #sum of this MAT should be 1
 MassAtmA = FracAreaA*5.14E18
-VolumeA = AreaA*OD #*m depth to get m^3
+VolumeA = AreaA*OCEAN_DEPTH_M #*m depth to get m^3
 
 abc4=np.sum(FracAreaA)
 
 MgrA = VolumeA*1000000 #get mass (gr) of water per cell
-OceJoulINI = MgrA*4.186*(OIT+273.15) #initial joules per cell %OIT=degC
+OceJoulINI = MgrA*4.186*(OCEAN_INITIAL_TEMP+273.15) #initial joules per cell %OCEAN_INITIAL_TEMP=degC
 
 if opt1 ==3:
-    OceJoulTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1)) #evolving joules per cell PRE diffusion
+    OceJoulTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1)) #evolving joules per cell PRE diffusion
     OceJoulTOT1_3D[:] = np.nan
-    OceJoulTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1)) #evolving joules per cell POST diffusion
+    OceJoulTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1)) #evolving joules per cell POST diffusion
     OceJoulTOT2_3D[:] = np.nan
     OceJoulPAreaTOT2_3D = OceJoulTOT2_3D #ocean joules per unit area
     OceJoulTOT2_3D_PREDIFF = OceJoulTOT2_3D #just for checking with the diffusion with HP50g
@@ -154,19 +153,19 @@ if opt1 ==3:
 OceTempINI = (OceJoulINI/(4.186*MgrA))-273.15 #initial temp (degC)
 
 if opt1 == 3:
-    OceTempTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1)) #evolving temp (degC)
+    OceTempTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1)) #evolving temp (degC)
     OceTempTOT1_3D[:] = np.nan
-    OceTempTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1)) #evolving temp (degC)
+    OceTempTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1)) #evolving temp (degC)
     OceTempTOT2_3D[:] = np.nan
     OceTempTOT1_3D[:,:,0] = OceTempINI #evolving temp (degC)
     OceTempTOT2_3D[:,:,0] = OceTempINI #evolving temp (degC)
 
-AtmJoulINI = (AIT+273.15)*1004*MassAtmA
+AtmJoulINI = (ATMOSPHERE_INITIAL_TEMP+273.15)*1004*MassAtmA
 
 if opt1 == 3:
-    AtmJoulTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1))
+    AtmJoulTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1))
     AtmJoulTOT1_3D[:] = np.nan
-    AtmJoulTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1))
+    AtmJoulTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1))
     AtmJoulTOT2_3D[:] = np.nan
     AtmJoulPAreaTOT2_3D = AtmJoulTOT2_3D #atm joules per unit area
     AtmJoulTOT2_3D_PREDIFF = AtmJoulTOT2_3D #just for checking with the diffusion with HP50g
@@ -176,9 +175,9 @@ if opt1 == 3:
 AtmTempINI = (AtmJoulINI/(MassAtmA*1004))-273.15
 
 if opt1 == 3:
-    AtmTempTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1))
+    AtmTempTOT1_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1))
     AtmTempTOT1_3D[:] = np.nan
-    AtmTempTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NTs+1))
+    AtmTempTOT2_3D = np.empty((int(180/LATRES),int(360/LONGRES),NUMBER_TIME_STEPS+1))
     AtmTempTOT2_3D[:] = np.nan
     AtmTempTOT1_3D[:,:,0] = AtmTempINI
     AtmTempTOT2_3D[:,:,0] = AtmTempINI
@@ -191,7 +190,7 @@ monthstr = (monthlist[month-1])
 
 MydateLON = datetime.datetime(2001, month, 21, 12, 0, 0) #maxNH %92days.*24
 
-tend=int(NTs)    
+tend=int(NUMBER_TIME_STEPS)    
 
 AvSI=np.empty((tend,1)) #to get the average SI across the planet
 OceAtmTempEvo=np.empty((tend,4))
@@ -276,24 +275,24 @@ for t in range(0,(tend)):
     S2E = SIALBMAT*(AreaA)
 
     if opt1 == 3:
-        A2E = AreaA*SB*AA*((AtmTempTOT1_3D[:,:,t]+273.15)**4)*0.5
-        SR = AreaA*SB*((OceTempTOT1_3D[:,:,t]+273.15)**4)
-    E2A = SR*AA
-    E2S = SR*(1-AA)
+        A2E = AreaA*STEFAN_BOLTZMANN_CONSTANT*ATMOSPHERIC_ABSORPTION_COEFFICIENT*((AtmTempTOT1_3D[:,:,t]+273.15)**4)*0.5
+        SR = AreaA*STEFAN_BOLTZMANN_CONSTANT*((OceTempTOT1_3D[:,:,t]+273.15)**4)
+    E2A = SR*ATMOSPHERIC_ABSORPTION_COEFFICIENT
+    E2S = SR*(1-ATMOSPHERIC_ABSORPTION_COEFFICIENT)
     A2S = A2E
     
 
     if opt1 == 3:
-        OceJoulTOT1_3D[:,:,t+1] = OceJoulTOT1_3D[:,:,t] + S2E*Ts + A2E*Ts - E2S*Ts - E2A*Ts
+        OceJoulTOT1_3D[:,:,t+1] = OceJoulTOT1_3D[:,:,t] + S2E*DELTA_TIME_SECS + A2E*DELTA_TIME_SECS - E2S*DELTA_TIME_SECS - E2A*DELTA_TIME_SECS
         OceTempTOT1_3D[:,:,t+1] = (OceJoulTOT1_3D[:,:,t]/(4.186*MgrA))-273.15
-        AtmJoulTOT1_3D[:,:,t+1] = AtmJoulTOT1_3D[:,:,t] + E2A*Ts - A2E*Ts - A2S*Ts
+        AtmJoulTOT1_3D[:,:,t+1] = AtmJoulTOT1_3D[:,:,t] + E2A*DELTA_TIME_SECS - A2E*DELTA_TIME_SECS - A2S*DELTA_TIME_SECS
         AtmTempTOT1_3D[:,:,t+1] = (AtmJoulTOT1_3D[:,:,t]/(MassAtmA*1004))-273.15
 
 
     if opt1 == 3:
-        OceJoulTOT2_3D[:,:,t+1] = OceJoulTOT2_3D[:,:,t] + S2E*Ts + A2E*Ts - E2S*Ts - E2A*Ts
+        OceJoulTOT2_3D[:,:,t+1] = OceJoulTOT2_3D[:,:,t] + S2E*DELTA_TIME_SECS + A2E*DELTA_TIME_SECS - E2S*DELTA_TIME_SECS - E2A*DELTA_TIME_SECS
         OceJoulTOT2_3D_PREDIFF[:,:,t+1] = OceJoulTOT2_3D[:,:,t+1]
-        AtmJoulTOT2_3D[:,:,t+1] = AtmJoulTOT2_3D[:,:,t] + E2A*Ts - A2E*Ts - A2S*Ts   
+        AtmJoulTOT2_3D[:,:,t+1] = AtmJoulTOT2_3D[:,:,t] + E2A*DELTA_TIME_SECS - A2E*DELTA_TIME_SECS - A2S*DELTA_TIME_SECS   
         AtmJoulTOT2_3D_PREDIFF[:,:,t+1] = AtmJoulTOT2_3D[:,:,t+1]   
        
   
@@ -313,18 +312,18 @@ for t in range(0,(tend)):
             for j in range(0,len(SIMAT[0])):  
                 for i in range(0,len(SIMAT)):
                     if i==0: #TOP ROW
-                        OceJoulTempEneDens[i,j]=(((OceJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i+1,j,t+1])*KY)/(LATDX[i,j]**2)\
-                                    + ((OceJoulPAreaTOT2_3D[i,j-1,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*KX)/(LONGDX[i,j]**2))*Ts\
+                        OceJoulTempEneDens[i,j]=(((OceJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i+1,j,t+1])*DIFFUSION_Y_CONSTANT)/(LATDX[i,j]**2)\
+                                    + ((OceJoulPAreaTOT2_3D[i,j-1,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*DIFFUSION_X_CONSTANT)/(LONGDX[i,j]**2))*DELTA_TIME_SECS\
                                     + OceJoulPAreaTOT2_3D[i,j,t+1]
                     
                     elif i==len(LATMAT)-1: #BOTTOM ROW
-                        OceJoulTempEneDens[i,j]=(((OceJoulPAreaTOT2_3D[i-1,j,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1])*KY)/(LATDX[i,j]**2)\
-                                    + ((OceJoulPAreaTOT2_3D[i,j-1,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*KX)/(LONGDX[i,j]**2))*Ts\
+                        OceJoulTempEneDens[i,j]=(((OceJoulPAreaTOT2_3D[i-1,j,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1])*DIFFUSION_Y_CONSTANT)/(LATDX[i,j]**2)\
+                                    + ((OceJoulPAreaTOT2_3D[i,j-1,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*DIFFUSION_X_CONSTANT)/(LONGDX[i,j]**2))*DELTA_TIME_SECS\
                                     + OceJoulPAreaTOT2_3D[i,j,t+1]
 
                     else: #non bottom non top rows
-                        OceJoulTempEneDens[i,j]=(((OceJoulPAreaTOT2_3D[i-1,j,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i+1,j,t+1])*KY)/(LATDX[i,j]**2)\
-                                    + ((OceJoulPAreaTOT2_3D[i,j-1,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*KX)/(LONGDX[i,j]**2))*Ts\
+                        OceJoulTempEneDens[i,j]=(((OceJoulPAreaTOT2_3D[i-1,j,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i+1,j,t+1])*DIFFUSION_Y_CONSTANT)/(LATDX[i,j]**2)\
+                                    + ((OceJoulPAreaTOT2_3D[i,j-1,t+1]-2*OceJoulPAreaTOT2_3D[i,j,t+1]+OceJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*DIFFUSION_X_CONSTANT)/(LONGDX[i,j]**2))*DELTA_TIME_SECS\
                                     + OceJoulPAreaTOT2_3D[i,j,t+1]
             OceJoulPAreaTOT2_3D[:,:,t+1] = OceJoulTempEneDens #transfers back
             OceJoulTOT2_3D[:,:,t+1] = OceJoulPAreaTOT2_3D[:,:,t+1]*AreaA #converting back from j/m^2 to j
@@ -343,18 +342,18 @@ for t in range(0,(tend)):
             for j in range(0,len(SIMAT[0])):  
                 for i in range(0,len(SIMAT)):
                     if i==0: #TOP ROW
-                        AtmJoulTempEneDens[i,j]=(((AtmJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i+1,j,t+1])*KY)/(LATDX[i,j]**2)\
-                                    + ((AtmJoulPAreaTOT2_3D[i,j-1,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*KX)/(LONGDX[i,j]**2))*Ts\
+                        AtmJoulTempEneDens[i,j]=(((AtmJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i+1,j,t+1])*DIFFUSION_Y_CONSTANT)/(LATDX[i,j]**2)\
+                                    + ((AtmJoulPAreaTOT2_3D[i,j-1,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*DIFFUSION_X_CONSTANT)/(LONGDX[i,j]**2))*DELTA_TIME_SECS\
                                     + AtmJoulPAreaTOT2_3D[i,j,t+1]
 
                     elif i==len(LATMAT)-1: #BOTTOM ROW
-                        AtmJoulTempEneDens[i,j]=(((AtmJoulPAreaTOT2_3D[i-1,j,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1])*KY)/(LATDX[i,j]**2)\
-                                    + ((AtmJoulPAreaTOT2_3D[i,j-1,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*KX)/(LONGDX[i,j]**2))*Ts\
+                        AtmJoulTempEneDens[i,j]=(((AtmJoulPAreaTOT2_3D[i-1,j,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,int(j+len(LATMAT[0])/2)%len(LATMAT[0]),t+1])*DIFFUSION_Y_CONSTANT)/(LATDX[i,j]**2)\
+                                    + ((AtmJoulPAreaTOT2_3D[i,j-1,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*DIFFUSION_X_CONSTANT)/(LONGDX[i,j]**2))*DELTA_TIME_SECS\
                                     + AtmJoulPAreaTOT2_3D[i,j,t+1]
 
                     else: #non bottom non top rows
-                        AtmJoulTempEneDens[i,j]=(((AtmJoulPAreaTOT2_3D[i-1,j,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i+1,j,t+1])*KY)/(LATDX[i,j]**2)\
-                                    + ((AtmJoulPAreaTOT2_3D[i,j-1,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*KX)/(LONGDX[i,j]**2))*Ts\
+                        AtmJoulTempEneDens[i,j]=(((AtmJoulPAreaTOT2_3D[i-1,j,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i+1,j,t+1])*DIFFUSION_Y_CONSTANT)/(LATDX[i,j]**2)\
+                                    + ((AtmJoulPAreaTOT2_3D[i,j-1,t+1]-2*AtmJoulPAreaTOT2_3D[i,j,t+1]+AtmJoulPAreaTOT2_3D[i,(j+1)%len(LATMAT[0]),t+1])*DIFFUSION_X_CONSTANT)/(LONGDX[i,j]**2))*DELTA_TIME_SECS\
                                     + AtmJoulPAreaTOT2_3D[i,j,t+1]
             AtmJoulPAreaTOT2_3D[:,:,t+1] = AtmJoulTempEneDens #transfers back
             AtmJoulTOT2_3D[:,:,t+1] = AtmJoulPAreaTOT2_3D[:,:,t+1]*AreaA #converting back from j/m^2 to j
