@@ -6,7 +6,7 @@ Created on Sat Nov 12 15:05:47 2016
 """
 
 from IPython import get_ipython
-#get_ipython().magic('reset -f')
+get_ipython().magic('reset -f')
 import sys
 #sys.path.append('PythFunctions')
 import numpy as np
@@ -47,14 +47,12 @@ opt2 = 3
 #PoleFrac=0.99
 SOLAR_CONSTANT = 1361
 ALBEDO = 0.3
-LATRES = 30
-LONGRES = 60
 OCEAN_INITIAL_TEMP = -273.15 #initial temp of water degC
 ATMOSPHERE_INITIAL_TEMP = -273.15
 EARTH_RADIUS_M = 6371000 #m
-n_lat = 90/LATRES #number of cells vertically for just 1/4
+N_LAT = 18
+N_LONG = 4
 STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
-#ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
 ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
 DELTA_TIME_SECS = 3600
 NUMBER_TIME_STEPS = 365*24*1.5
@@ -62,7 +60,10 @@ DIFFUSION_X_CONSTANT = 800000 #diffusion constant in X #90000
 DIFFUSION_Y_CONSTANT = 800000#2500000 #diffusion constant in Y
 LASER_FROM_SPACE=0#9999#99999
 OCEAN_DEPTH_M=1
+LATRES=90/N_LAT*2
+LONGRES=180/N_LONG*2
 
+#*********************** END OF INITIAL CONDITIONS INPUT **********************
 
 xticks= np.arange(-180,181,LONGRES)
 yticks= np.arange(-90,91,LATRES)
@@ -112,7 +113,7 @@ C=np.empty((int(180/LATRES),1))
 D=np.empty((int(180/LATRES),1))
 E=np.empty((int(180/LATRES),1))
  
-for i in range(0,int(n_lat*2)):   
+for i in range(0,int(N_LAT)):   
     A[i,0]=(i*LATRES)-90 #lower limit, further S, more negative
     B[i,0]=((i+1)*LATRES)-90; #upper limit, further N, more positive
     C[i,0]=(2*np.pi*(EARTH_RADIUS_M**2))-(2*np.pi*(EARTH_RADIUS_M**2)*(np.sin(np.deg2rad(B[i,0]))))
