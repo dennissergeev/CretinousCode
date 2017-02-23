@@ -45,7 +45,7 @@ opt2 = 3
 # 3=both
 
 #PoleFrac=0.99
-SC = 1361
+SOLAR_CONSTANT = 1361
 ALB = 0.3
 LATRES = 30
 LONGRES = 60
@@ -248,12 +248,12 @@ for t in range(0,(tend)):
             if math.cos(math.radians(THETAs)) < 0:
                 INSOL = 0
             else:
-                INSOL = SC*math.cos(math.radians(THETAs)) #INSOL calculated!!
+                INSOL = SOLAR_CONSTANT*math.cos(math.radians(THETAs)) #INSOL calculated!!
     
             SIMAT[i,j]=INSOL
             SIMATav[t,0]=np.mean(SIMAT)
             SIALBMAT[i,j]=SIMAT[i,j]*(1-ALBMAT[i,j])
-            PERCMAT[i,j]=INSOL/SC*100
+            PERCMAT[i,j]=INSOL/SOLAR_CONSTANT*100
             
     AvSI[t,0]=np.mean(SIMAT)  
 
