@@ -7,13 +7,9 @@ Created on Sat Nov 12 15:05:47 2016
 
 from IPython import get_ipython
 get_ipython().magic('reset -f')
-import sys
 #sys.path.append('PythFunctions')
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-import os
-import time
 import datetime
 import math
 from datetime import timedelta
