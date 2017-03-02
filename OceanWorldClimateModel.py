@@ -11,7 +11,6 @@ get_ipython().magic('reset -f')
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
-import math
 from datetime import timedelta
 #from Function import show_plot
 plt.close("all")
@@ -70,7 +69,7 @@ midcell_long_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 cell_dy_m_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 cell_dx_m_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 albedo_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-STABILITY = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #for stability analysis
+stability = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #for stability analysis
 surf_radiation = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 space2_ocean_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 atmos2_ocean_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
@@ -85,16 +84,14 @@ toa_solar_insol_perc = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.n
 
 midcell_lat_mat[:] = np.arange(90-lat_res_deg/2, -90+lat_res_deg/2-1, -lat_res_deg)[:, np.newaxis]
 
-for i in range(0,len(midcell_long_mat)):
-    midcell_long_mat[i,:]=np.arange(-180+long_res_deg/2,180-long_res_deg/2+1,long_res_deg)
+midcell_long_mat[:]=np.arange(-180+long_res_deg/2,180-long_res_deg/2+1,long_res_deg)[np.newaxis, :]
 
-for i in range(0,len(cell_dy_m_mat[0])):
-    cell_dy_m_mat[:,i]=(EARTH_RADIUS_M*np.pi)/int(180/lat_res_deg)
+cell_dy_m_mat[:]=(EARTH_RADIUS_M*np.pi)/int(180/lat_res_deg)
 
 for i in range(0,len(cell_dx_m_mat)):
     cell_dx_m_mat[i,:]=((EARTH_RADIUS_M*np.cos(np.deg2rad(midcell_lat_mat[i,0])))*2*np.pi)/int(360/long_res_deg)
 
-STABILITY=(0.5*np.minimum(cell_dx_m_mat*cell_dx_m_mat,cell_dy_m_mat*cell_dy_m_mat))/DELTA_TIME_SECS
+stability=(0.5*np.minimum(cell_dx_m_mat*cell_dx_m_mat,cell_dy_m_mat*cell_dy_m_mat))/DELTA_TIME_SECS
 
 albedo_mat[:] = ALBEDO
 
