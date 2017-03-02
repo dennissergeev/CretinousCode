@@ -78,8 +78,8 @@ ocean2_atmos_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 ocean2_space_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 atmos2_space_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 
-
-toa_solar_insol_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation
+# TODO: remove unnessesary declarations, e.g. toa_solar_insol_mat
+# toa_solar_insol_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation
 solar_insol = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation * (1-AlBEDO)
 toa_solar_insol_perc = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation Percentage
 
@@ -180,61 +180,57 @@ t_end=int(N_TIME_STEPS)
 tseries_mean_toa_solar_insol=np.full((t_end,1),np.nan) #to get the average SI across the planet
 tseries_ocean_atmos_mean_temp=np.full((t_end,4),np.nan)
 
+# Utility functions used to calculate insolation
+_get_year = np.vectorize(lambda x: x.year)
+_get_doy = np.vectorize(lambda x: x.timetuple().tm_yday)
+_get_sec = np.vectorize(lambda x: x.hour*3600 + x.minute*60 + x.second - 12*3600)
 
 ###############################################################################   
 ############# MAIN TIME LOOP BEGINS ###########################################
 ###############################################################################   
 
-for t in range(0,(t_end)):
-    print(t)
-    
-    
+for t in range(t_end):
     MY_DATE_LONDON = MY_DATE_LONDON + timedelta(hours=1)
-         
-    print(MY_DATE_LONDON)
-    for j in range(0,len(toa_solar_insol_mat[0])):    
-        for i in range(0,len(toa_solar_insol_mat)):
-        
-            lat = midcell_lat_mat[i,j]
-                
-            long = midcell_long_mat[i,j]
-            time_adjust = long/180*12*3600
-            my_date_location=MY_DATE_LONDON + datetime.timedelta(0,time_adjust) #datetimeobj
-            my_date_location = my_date_location.timetuple() #structdateobj
-        
-            t_sec=((my_date_location[3]*3600) + my_date_location[4]*60 + my_date_location[5]) - (12*3600);
-            lat = math.radians(lat)
-            long = math.radians(long)
-    
-            dj = my_date_location[7]
-            #dl FAM p318 eq 9.7
-            if my_date_location[0] >= 2001:
-                dl = (my_date_location[0] - 2001)/4
-            else:
-                dl = ((my_date_location[0] - 2000)/4) - 1
-    
-            njd = 364.5 + ((my_date_location[0]-2001)*365) + dj + dl
-    
-            gm = 357.528 + 0.9856003*njd; #DEG
-            lm = 280.460 + 0.9856474*njd; #DEG
-            lam_ec = lm + 1.915*math.sin(math.radians(gm)) + 0.020*math.sin(math.radians(2*gm)) #in degrees?
-            eps_ob = 23.439 - 0.0000004*njd #DEG
-            delta = math.degrees(math.asin(math.sin(math.radians(eps_ob))*math.sin(math.radians(lam_ec)))) #Solar Declination Angle (DEG)
-            ha = math.degrees((2*math.pi*t_sec)/86400) #DEG
-            theta_s = math.degrees(math.acos(math.sin(lat)*math.sin(math.radians(delta)) + math.cos(lat)*math.cos(math.radians(delta))*math.cos(math.radians(ha)))) #Solar Zenith Angle (DEG)
-    
-    
-            if math.cos(math.radians(theta_s)) < 0:
-                insol = 0
-            else:
-                insol = SOLAR_CONSTANT*math.cos(math.radians(theta_s)) #insol calculated!!
-    
-            toa_solar_insol_mat[i,j]=insol
-           # toa_solar_insol_matav[t,0]=np.mean(toa_solar_insol_mat)
-            solar_insol[i,j]=toa_solar_insol_mat[i,j]*(1-albedo_mat[i,j])
-            toa_solar_insol_perc[i,j]=insol/SOLAR_CONSTANT*100
-            
-    tseries_mean_toa_solar_insol[t,0]=np.mean(toa_solar_insol_mat)  
+    print(t, MY_DATE_LONDON)
+    tadj = midcell_long_mat / 180 * 12 * 3600
+
+    dts = MY_DATE_LONDON + tadj * timedelta(seconds=1)
+
+    tadj_sec = midcell_long_mat / 180 * 12 * 3600
+    datetime_adj = MY_DATE_LONDON + tadj_sec * timedelta(seconds=1)
+
+    t_sec = _get_sec(datetime_adj)
+    years = _get_year(datetime_adj)
+    dj = _get_doy(datetime_adj)
+
+    lat = np.deg2rad(midcell_lat_mat)
+    long = np.deg2rad(midcell_long_mat)
+
+    # Use eq 9.7 from FAM (p318)
+    dl = np.full(years.shape, np.nan)
+    dl[years>=2001] = (years[years>=2001] - 2001) / 4
+    dl[years<2001] = (years[years<2001] - 2001) / 4 - 1
+
+    njd = 364.5 + (years - 2001) * 365 + dj + dl
+
+    gm = 357.528 + 0.9856003 * njd  # DEG
+    lm = 280.460 + 0.9856474 * njd  # DEG
+    lam_ec = lm + 1.915 * np.sin(np.deg2rad(gm)) + 0.020*np.sin(np.deg2rad(2*gm)) #in degrees?
+    eps_ob = 23.439 - 0.0000004 * njd  # DEG
+    delta = np.arcsin(np.sin(np.deg2rad(eps_ob))
+                      *np.sin(np.deg2rad(lam_ec)))  # Solar Declination Angle (RAD)
+    ha = (2 * np.pi * t_sec) / 86400  # RAD
+    theta_s = np.degrees(np.arccos(np.sin(lat) * np.sin(delta)
+                                   + np.cos(lat) * np.cos(delta) * np.cos(ha)
+                                  )
+                        ) #Solar Zenith Angle (DEG)
+    toa_solar_insol_mat = SOLAR_CONSTANT*np.cos(np.deg2rad(theta_s))
+    toa_solar_insol_mat[np.cos(np.deg2rad(theta_s)) < 0] = 0
+    # toa_solar_insol_matav[t,0]=np.mean(toa_solar_insol_mat)
+    solar_insol = toa_solar_insol_mat * (1 - albedo_mat)
+    toa_solar_insol_perc = toa_solar_insol_mat / SOLAR_CONSTANT * 100
+ 
+    tseries_mean_toa_solar_insol[t, 0] = np.mean(toa_solar_insol_mat)  
 
    
     tseries_ocean_atmos_mean_temp[t,0]=np.mean(ocean_cell_tempdeg_prediff_3dmat[:,:,t]) #ocean temp without diff
