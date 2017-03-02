@@ -11,7 +11,6 @@ get_ipython().magic('reset -f')
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
-import math
 from datetime import timedelta
 #from Function import show_plot
 plt.close("all")
@@ -70,7 +69,7 @@ midcell_long_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 cell_dy_m_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 cell_dx_m_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 albedo_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-STABILITY = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #for stability analysis
+stability = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #for stability analysis
 surf_radiation = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 space2_ocean_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
 atmos2_ocean_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
@@ -85,16 +84,14 @@ toa_solar_insol_perc = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.n
 
 midcell_lat_mat[:] = np.arange(90-lat_res_deg/2, -90+lat_res_deg/2-1, -lat_res_deg)[:, np.newaxis]
 
-for i in range(0,len(midcell_long_mat)):
-    midcell_long_mat[i,:]=np.arange(-180+long_res_deg/2,180-long_res_deg/2+1,long_res_deg)
+midcell_long_mat[:]=np.arange(-180+long_res_deg/2,180-long_res_deg/2+1,long_res_deg)[np.newaxis, :]
 
-for i in range(0,len(cell_dy_m_mat[0])):
-    cell_dy_m_mat[:,i]=(EARTH_RADIUS_M*np.pi)/int(180/lat_res_deg)
+cell_dy_m_mat[:]=(EARTH_RADIUS_M*np.pi)/int(180/lat_res_deg)
 
 for i in range(0,len(cell_dx_m_mat)):
     cell_dx_m_mat[i,:]=((EARTH_RADIUS_M*np.cos(np.deg2rad(midcell_lat_mat[i,0])))*2*np.pi)/int(360/long_res_deg)
 
-STABILITY=(0.5*np.minimum(cell_dx_m_mat*cell_dx_m_mat,cell_dy_m_mat*cell_dy_m_mat))/DELTA_TIME_SECS
+stability=(0.5*np.minimum(cell_dx_m_mat*cell_dx_m_mat,cell_dy_m_mat*cell_dy_m_mat))/DELTA_TIME_SECS
 
 albedo_mat[:] = ALBEDO
 
@@ -203,8 +200,8 @@ for t in range(0,(t_end)):
             my_date_location = my_date_location.timetuple() #structdateobj
         
             t_sec=((my_date_location[3]*3600) + my_date_location[4]*60 + my_date_location[5]) - (12*3600);
-            lat = math.radians(lat)
-            long = math.radians(long)
+            lat = np.radians(lat)
+            long = np.radians(long)
     
             dj = my_date_location[7]
             #dl FAM p318 eq 9.7
@@ -217,17 +214,17 @@ for t in range(0,(t_end)):
     
             gm = 357.528 + 0.9856003*njd; #DEG
             lm = 280.460 + 0.9856474*njd; #DEG
-            lam_ec = lm + 1.915*math.sin(math.radians(gm)) + 0.020*math.sin(math.radians(2*gm)) #in degrees?
+            lam_ec = lm + 1.915*np.sin(np.radians(gm)) + 0.020*np.sin(np.radians(2*gm)) #in degrees?
             eps_ob = 23.439 - 0.0000004*njd #DEG
-            delta = math.degrees(math.asin(math.sin(math.radians(eps_ob))*math.sin(math.radians(lam_ec)))) #Solar Declination Angle (DEG)
-            ha = math.degrees((2*math.pi*t_sec)/86400) #DEG
-            theta_s = math.degrees(math.acos(math.sin(lat)*math.sin(math.radians(delta)) + math.cos(lat)*math.cos(math.radians(delta))*math.cos(math.radians(ha)))) #Solar Zenith Angle (DEG)
+            delta = np.degrees(np.arcsin(np.sin(np.radians(eps_ob))*np.sin(np.radians(lam_ec)))) #Solar Declination Angle (DEG)
+            ha = np.degrees((2*np.pi*t_sec)/86400) #DEG
+            theta_s = np.degrees(np.arccos(np.sin(lat)*np.sin(np.radians(delta)) + np.cos(lat)*np.cos(np.radians(delta))*np.cos(np.radians(ha)))) #Solar Zenith Angle (DEG)
     
     
-            if math.cos(math.radians(theta_s)) < 0:
+            if np.cos(np.radians(theta_s)) < 0:
                 insol = 0
             else:
-                insol = SOLAR_CONSTANT*math.cos(math.radians(theta_s)) #insol calculated!!
+                insol = SOLAR_CONSTANT*np.cos(np.radians(theta_s)) #insol calculated!!
     
             toa_solar_insol_mat[i,j]=insol
            # toa_solar_insol_matav[t,0]=np.mean(toa_solar_insol_mat)
