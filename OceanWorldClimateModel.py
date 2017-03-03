@@ -4,16 +4,16 @@ Created on Sat Nov 12 15:05:47 2016
 
 @author: markprosser
 """
-
 from IPython import get_ipython
-get_ipython().magic('reset -f')
-#sys.path.append('PythFunctions')
+get_ipython().magic('reset -f')  # NOQA
+# sys.path.append('PythFunctions')
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 from datetime import timedelta
-#from Function import show_plot
+# from Function import show_plot
 plt.close("all")
+
 
 def show_plot(figure_id=None):
     import matplotlib.pyplot as plt
@@ -29,103 +29,96 @@ def show_plot(figure_id=None):
     fig.canvas.manager.window.raise_()
 
 
-
 opt2 = 3
 # 1=Oceandiffusion only
 # 2=Atmsopherediffusion only
 # 3=both
 
-#PoleFrac=0.99
+# PoleFrac=0.99
 SOLAR_CONSTANT = 1361
 ALBEDO = 0.3
-OCEAN_INITIAL_TEMP = -273.15 #initial temp of water degC
+OCEAN_INITIAL_TEMP = -273.15  # initial temp of water degC
 ATMOSPHERE_INITIAL_TEMP = -273.15
-EARTH_RADIUS_M = 6371000 #m
+EARTH_RADIUS_M = 6371000  # m
+EARTH_CROSS_AREA = 2 * np.pi * EARTH_RADIUS_M ** 2
 N_LAT = 5
 N_LONG = 3
 STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
 ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
 DELTA_TIME_SECS = 3600
-N_TIME_STEPS = 40*24*1
-DIFFUSION_X_CONSTANT = 800000 #diffusion constant in X #90000
-DIFFUSION_Y_CONSTANT = 800000#2500000 #diffusion constant in Y
-LASER_FROM_SPACE=0#9999#99999
-OCEAN_DEPTH_M=1
-START_MONTH = 9  
-MONTH_LIST = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-MY_DATE_LONDON = datetime.datetime(2001, START_MONTH, 21, 12, 0, 0) #maxNH %92days.*24
+N_TIME_STEPS = 40 * 24 * 1
+DIFFUSION_X_CONSTANT = 800000  # diffusion constant in X #90000
+DIFFUSION_Y_CONSTANT = 800000  # 2500000 #diffusion constant in Y
+LASER_FROM_SPACE = 0  # 9999#99999
+OCEAN_DEPTH_M = 1
+START_MONTH = 9
+MONTH_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+MY_DATE_LONDON = datetime.datetime(2001, START_MONTH, 21, 12, 0, 0)
+# maxNH %92days.*24
 
-#*********************** END OF INITIAL CONDITIONS INPUT **********************
-lat_res_deg=180/N_LAT
-long_res_deg=360/N_LONG
-month=START_MONTH
-month_str = (MONTH_LIST[month-1])
+# ********************** END OF INITIAL CONDITIONS INPUT **********************
+lat_res_deg = 180 / N_LAT
+long_res_deg = 360 / N_LONG
+month = START_MONTH
+month_str = MONTH_LIST[month-1]
 
-
-xticks= np.arange(-180,181,long_res_deg)
-yticks= np.arange(-90,91,lat_res_deg)
-midcell_lat_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-midcell_long_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-cell_dy_m_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-cell_dx_m_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-albedo_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-stability = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #for stability analysis
-surf_radiation = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-space2_ocean_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-atmos2_ocean_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-ocean2_atmos_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-ocean2_space_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-atmos2_space_flux = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
+xticks = np.arange(-180, 181, long_res_deg)
+yticks = np.arange(-90, 91, lat_res_deg)
+midcell_lat_mat = np.full((N_LAT, N_LONG), np.nan)
+midcell_long_mat = np.full((N_LAT, N_LONG), np.nan)
+cell_dy_m_mat = np.full((N_LAT, N_LONG), np.nan)
+cell_dx_m_mat = np.full((N_LAT, N_LONG), np.nan)
+albedo_mat = np.full((N_LAT, N_LONG), np.nan)
+stability = np.full((N_LAT, N_LONG), np.nan)  # for stability analysis
+surf_radiation = np.full((N_LAT, N_LONG), np.nan)
+space2_ocean_flux = np.full((N_LAT, N_LONG), np.nan)
+atmos2_ocean_flux = np.full((N_LAT, N_LONG), np.nan)
+ocean2_atmos_flux = np.full((N_LAT, N_LONG), np.nan)
+ocean2_space_flux = np.full((N_LAT, N_LONG), np.nan)
+atmos2_space_flux = np.full((N_LAT, N_LONG), np.nan)
+ocean_cell_area_m2_mat = np.full((N_LAT, N_LONG), np.nan)
 
 # TODO: remove unnessesary declarations, e.g. toa_solar_insol_mat
-# toa_solar_insol_mat = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation
-solar_insol = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation * (1-AlBEDO)
-toa_solar_insol_perc = np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan) #Solar Insolation Percentage
+# toa_solar_insol_mat = np.full((N_LAT, N_LONG), np.nan) #Solar Insolation
+solar_insol = np.full((N_LAT, N_LONG), np.nan)  # Solar Insolation * (1-AlBEDO)
+toa_solar_insol_perc = np.full((N_LAT, N_LONG), np.nan)  # Solar Insol Percent
 
-midcell_lat_mat[:] = np.arange(90-lat_res_deg/2, -90+lat_res_deg/2-1, -lat_res_deg)[:, np.newaxis]
+midcell_lat_mat[:] = np.arange(90-lat_res_deg/2,
+                               -90+lat_res_deg/2-1,
+                               -lat_res_deg)[:, np.newaxis]
+midcell_long_mat[:] = np.arange(-180+long_res_deg/2,
+                                180-long_res_deg/2+1,
+                                long_res_deg)[np.newaxis, :]
 
-midcell_long_mat[:]=np.arange(-180+long_res_deg/2,180-long_res_deg/2+1,long_res_deg)[np.newaxis, :]
+cell_dy_m_mat[:] = (EARTH_RADIUS_M * np.pi) / N_LAT
 
-cell_dy_m_mat[:]=(EARTH_RADIUS_M*np.pi)/int(180/lat_res_deg)
+cell_dx_m_mat[:] = (EARTH_RADIUS_M * np.cos(np.deg2rad(midcell_lat_mat))
+                    * 2 * np.pi) / N_LONG
 
-for i in range(0,len(cell_dx_m_mat)):
-    cell_dx_m_mat[i,:]=((EARTH_RADIUS_M*np.cos(np.deg2rad(midcell_lat_mat[i,0])))*2*np.pi)/int(360/long_res_deg)
-
-stability=(0.5*np.minimum(cell_dx_m_mat*cell_dx_m_mat,cell_dy_m_mat*cell_dy_m_mat))/DELTA_TIME_SECS
+stability = 0.5 * np.minimum(cell_dx_m_mat * cell_dx_m_mat,
+                             cell_dy_m_mat * cell_dy_m_mat) / DELTA_TIME_SECS
 
 albedo_mat[:] = ALBEDO
 
+# calculate the area of a grid cell
+# using HP 50g GLOBEARE prog methodology
+A = np.arange(N_LAT) * lat_res_deg - 90
+B = np.arange(1, N_LAT+1) * lat_res_deg - 90
+C = EARTH_CROSS_AREA * (1 - np.sin(np.deg2rad(B)))
+D = EARTH_CROSS_AREA * (1 - np.sin(np.deg2rad(A)))
+E = D - C
 
-###############################################################################       
-#calculate the area of a grid cell
-#using HP 50g GLOBEARE prog methodology
-###############################################################################   
-    
-A=np.full((int(180/lat_res_deg),1),np.nan)
-B=np.full((int(180/lat_res_deg),1),np.nan)
-C=np.full((int(180/lat_res_deg),1),np.nan)
-D=np.full((int(180/lat_res_deg),1),np.nan)
-E=np.full((int(180/lat_res_deg),1),np.nan)
- 
-for i in range(0,int(N_LAT)):   
-    A[i,0]=(i*lat_res_deg)-90 #lower limit, further S, more negative
-    B[i,0]=((i+1)*lat_res_deg)-90; #upper limit, further N, more positive
-    C[i,0]=(2*np.pi*(EARTH_RADIUS_M**2))-(2*np.pi*(EARTH_RADIUS_M**2)*(np.sin(np.deg2rad(B[i,0]))))
-    D[i,0]=(2*np.pi*(EARTH_RADIUS_M**2))-(2*np.pi*(EARTH_RADIUS_M**2)*(np.sin(np.deg2rad(A[i,0]))))
+ocean_cell_area_m2_mat[:] = E[:, np.newaxis] / N_LONG
 
-E=D-C
+# TODO: remove in the next commit
+# del A, B, C, D, E <- not really necessary
 
-ocean_cell_area_m2_mat=np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
-###############################################################################   
+# reshape to aid with a 3D array division later
+ocean_cell_area_m2_mat_3d = ocean_cell_area_m2_mat[..., np.newaxis]
 
-for i in range(0,int(360/long_res_deg)):
-    ocean_cell_area_m2_mat[:,i]=np.reshape((E/(360/long_res_deg)),(len(midcell_lat_mat),)) #(Actual) area in m^2 per grid cell
-    
-del A,B,C,D,E
-
-ocean_cell_area_m2_mat_reshaped=ocean_cell_area_m2_mat.reshape(toa_solar_insol_mat.shape[0],toa_solar_insol_mat.shape[1],1) #reshaped to aid with a 3D array division later
-    
-#FOR THE FOLLOWING sum(sum(FOLLOWING)) to get global (as opposed to cell values)
+# FOR THE FOLLOWING sum(sum(FOLLOWING)) to get global
+# (as opposed to cell values)
 frac_ocean_cell_area_m2_mat = ocean_cell_area_m2_mat/(sum(sum(ocean_cell_area_m2_mat))) #sum of this MAT should be 1
 atmos_cell_mass_kg_mat = frac_ocean_cell_area_m2_mat*5.14E18
 ocean_cell_vol_m3_mat = ocean_cell_area_m2_mat*OCEAN_DEPTH_M #*m depth to get m^3
@@ -136,8 +129,8 @@ ocean_cell_mass_gr_mat = ocean_cell_vol_m3_mat*1000000 #get mass (gr) of water p
 ocean_cell_initjoules_mat= ocean_cell_mass_gr_mat*4.186*(OCEAN_INITIAL_TEMP+273.15) #initial joules per cell %OCEAN_INITIAL_TEMP=degC
 
 
-ocean_cell_joules_prediff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan) #evolving joules per cell PRE diffusion
-ocean_cell_joules_postdiff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan) #evolving joules per cell POST diffusion
+ocean_cell_joules_prediff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving joules per cell PRE diffusion
+ocean_cell_joules_postdiff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving joules per cell POST diffusion
 ocean_cell_joulesperunitarea_postdiff_3dmat = ocean_cell_joules_postdiff_3dmat #ocean joules per unit area
 ocean_cell_joules_postdiff_3dmat_check = ocean_cell_joules_postdiff_3dmat #just for checking with the diffusion with HP50g
 ocean_cell_joules_prediff_3dmat[:,:,0] = ocean_cell_initjoules_mat #evolving joules per cell PRE diffusion
@@ -146,15 +139,15 @@ ocean_cell_joules_postdiff_3dmat[:,:,0] = ocean_cell_initjoules_mat #evolving jo
 OceTempINI = (ocean_cell_initjoules_mat/(4.186*ocean_cell_mass_gr_mat))-273.15 #initial temp (degC)
 
 
-ocean_cell_tempdeg_prediff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan) #evolving temp (degC)
-ocean_cell_tempdeg_postdiff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan) #evolving temp (degC)
+ocean_cell_tempdeg_prediff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving temp (degC)
+ocean_cell_tempdeg_postdiff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving temp (degC)
 ocean_cell_tempdeg_prediff_3dmat[:,:,0] = OceTempINI #evolving temp (degC)
 ocean_cell_tempdeg_postdiff_3dmat[:,:,0] = OceTempINI #evolving temp (degC)
 
 atmos_cell_initjoules_mat = (ATMOSPHERE_INITIAL_TEMP+273.15)*1004*atmos_cell_mass_kg_mat
 
-atmos_cell_joules_prediff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan)
-atmos_cell_joules_postdiff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan)
+atmos_cell_joules_prediff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan)
+atmos_cell_joules_postdiff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan)
 atmos_cell_joulesperunitarea_postdiff_3dmat = atmos_cell_joules_postdiff_3dmat #atm joules per unit area
 atmos_cell_joules_postdiff_3dmat_check = atmos_cell_joules_postdiff_3dmat #just for checking with the diffusion with HP50g
 atmos_cell_joules_prediff_3dmat[:,:,0] = atmos_cell_initjoules_mat
@@ -163,8 +156,8 @@ atmos_cell_joules_postdiff_3dmat[:,:,0] = atmos_cell_initjoules_mat
 atmos_cell_inittemp_deg_mat = (atmos_cell_initjoules_mat/(atmos_cell_mass_kg_mat*1004))-273.15
 
 
-atmos_cell_tempdeg_prediff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan)
-atmos_cell_tempdeg_postdiff_3dmat = np.full((int(180/lat_res_deg),int(360/long_res_deg),N_TIME_STEPS+1),np.nan)
+atmos_cell_tempdeg_prediff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan)
+atmos_cell_tempdeg_postdiff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan)
 atmos_cell_tempdeg_prediff_3dmat[:,:,0] = atmos_cell_inittemp_deg_mat
 atmos_cell_tempdeg_postdiff_3dmat[:,:,0] = atmos_cell_inittemp_deg_mat
 
@@ -174,8 +167,8 @@ atmos_cell_tempdeg_postdiff_3dmat[:,:,0] = atmos_cell_inittemp_deg_mat
 
 t_end=int(N_TIME_STEPS)    
 
-tseries_mean_toa_solar_insol=np.full((t_end,1),np.nan) #to get the average SI across the planet
-tseries_ocean_atmos_mean_temp=np.full((t_end,4),np.nan)
+tseries_mean_toa_solar_insol=np.full((t_end,1), np.nan) #to get the average SI across the planet
+tseries_ocean_atmos_mean_temp=np.full((t_end,4), np.nan)
 
 # Utility functions used to calculate insolation
 _get_year = np.vectorize(lambda x: x.year)
@@ -280,7 +273,7 @@ for t in range(t_end):
 ###############################################################################       
     
         
-        ocean_cell_joulesperunitarea_postdiff_mat=np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
+        ocean_cell_joulesperunitarea_postdiff_mat=np.full((N_LAT, N_LONG), np.nan)
         for j in range(0,len(toa_solar_insol_mat[0])):  
             for i in range(0,len(toa_solar_insol_mat)):
                 if i==0: #TOP ROW
@@ -309,7 +302,7 @@ for t in range(t_end):
 ###############################################################################       
     
        
-        atmos_cell_joulesperunitarea_postdiff_mat=np.full((int(180/lat_res_deg),int(360/long_res_deg)),np.nan)
+        atmos_cell_joulesperunitarea_postdiff_mat=np.full((N_LAT, N_LONG), np.nan)
         for j in range(0,len(toa_solar_insol_mat[0])):  
             for i in range(0,len(toa_solar_insol_mat)):
                 if i==0: #TOP ROW
@@ -446,7 +439,7 @@ for t in range(t_end):
         show_plot()
 
 
-tseries_ocean_atmos_mean_temp_area_weighted=np.full((ocean_cell_joules_prediff_3dmat.shape[2],4),np.nan)
+tseries_ocean_atmos_mean_temp_area_weighted=np.full((ocean_cell_joules_prediff_3dmat.shape[2],4), np.nan)
 tseries_ocean_nodiff_meantemp=np.mean(ocean_cell_tempdeg_prediff_3dmat, axis=1)
 tseries_ocean_nodiff_meantemp=tseries_ocean_nodiff_meantemp*lat_band_area_prop
 tseries_ocean_nodiff_meantemp=np.sum(tseries_ocean_nodiff_meantemp, axis=0)
