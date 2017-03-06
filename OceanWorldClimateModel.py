@@ -41,10 +41,12 @@ OCEAN_INITIAL_TEMP = -273.15  # initial temp of water degC
 ATMOSPHERE_INITIAL_TEMP = -273.15
 EARTH_RADIUS_M = 6371000  # m
 EARTH_CROSS_AREA = 2 * np.pi * EARTH_RADIUS_M ** 2
+EARTH_AREA = 5.14E18  # FIXME: shouldn't it be 14th power?
 N_LAT = 5
 N_LONG = 3
 STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
 ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
+WATER_HEAT_CAPACITY = 4.186  # CHECK
 DELTA_TIME_SECS = 3600
 N_TIME_STEPS = 40 * 24 * 1
 DIFFUSION_X_CONSTANT = 800000  # diffusion constant in X #90000
@@ -78,6 +80,10 @@ ocean2_atmos_flux = np.full((N_LAT, N_LONG), np.nan)
 ocean2_space_flux = np.full((N_LAT, N_LONG), np.nan)
 atmos2_space_flux = np.full((N_LAT, N_LONG), np.nan)
 ocean_cell_area_m2_mat = np.full((N_LAT, N_LONG), np.nan)
+# evolving joules per cell PRE diffusion
+ocean_cell_joules_prediff_3dmat = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+# evolving joules per cell POST diffusion
+ocean_cell_joules_postdiff_3dmat = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
 
 # TODO: remove unnessesary declarations, e.g. toa_solar_insol_mat
 # toa_solar_insol_mat = np.full((N_LAT, N_LONG), np.nan) #Solar Insolation
@@ -105,8 +111,8 @@ albedo_mat[:] = ALBEDO
 # using HP 50g GLOBEARE prog methodology
 A = np.arange(N_LAT) * lat_res_deg - 90
 B = np.arange(1, N_LAT+1) * lat_res_deg - 90
-C = EARTH_CROSS_AREA * (1 - np.sin(np.deg2rad(B)))
-D = EARTH_CROSS_AREA * (1 - np.sin(np.deg2rad(A)))
+C = 0.5 * EARTH_AREA * (1 - np.sin(np.deg2rad(B)))
+D = 0.5 * EARTH_AREA * (1 - np.sin(np.deg2rad(A)))
 E = D - C
 
 ocean_cell_area_m2_mat[:] = E[:, np.newaxis] / N_LONG
@@ -119,30 +125,35 @@ ocean_cell_area_m2_mat_3d = ocean_cell_area_m2_mat[..., np.newaxis]
 
 # FOR THE FOLLOWING sum(sum(FOLLOWING)) to get global
 # (as opposed to cell values)
-frac_ocean_cell_area_m2_mat = ocean_cell_area_m2_mat/(sum(sum(ocean_cell_area_m2_mat))) #sum of this MAT should be 1
-atmos_cell_mass_kg_mat = frac_ocean_cell_area_m2_mat*5.14E18
-ocean_cell_vol_m3_mat = ocean_cell_area_m2_mat*OCEAN_DEPTH_M #*m depth to get m^3
+frac_ocean_cell_area_m2_mat = (ocean_cell_area_m2_mat /
+                               ocean_cell_area_m2_mat.sum())
+assert frac_ocean_cell_area_m2_mat.sum() == 1, 'sum of this ARR should be 1'
+atmos_cell_mass_kg_mat = frac_ocean_cell_area_m2_mat * EARTH_AREA
+ocean_cell_vol_m3_mat = ocean_cell_area_m2_mat * OCEAN_DEPTH_M  # *m depth m^3
 
-#abc4=np.sum(frac_ocean_cell_area_m2_mat) #check to see if sum =1
+# FIXME: multiply by density?
+# get mass (gr) of water per cell
+ocean_cell_mass_gr_mat = ocean_cell_vol_m3_mat * 1000000
+ocean_cell_initjoules_mat = (ocean_cell_mass_gr_mat
+                             * WATER_HEAT_CAPACITY
+                             * (OCEAN_INITIAL_TEMP + 273.15))  # initial joules
 
-ocean_cell_mass_gr_mat = ocean_cell_vol_m3_mat*1000000 #get mass (gr) of water per cell
-ocean_cell_initjoules_mat= ocean_cell_mass_gr_mat*4.186*(OCEAN_INITIAL_TEMP+273.15) #initial joules per cell %OCEAN_INITIAL_TEMP=degC
+# ocean joules per unit area
+ocean_cell_joulesperunitarea_postdiff_3dmat = ocean_cell_joules_postdiff_3dmat
+# just for checking with the diffusion with HP50g
+ocean_cell_joules_postdiff_3dmat_check = ocean_cell_joules_postdiff_3dmat
+# evolving joules per cell PRE diffusion
+ocean_cell_joules_prediff_3dmat[:,:,0] = ocean_cell_initjoules_mat
+# evolving joules per cell POST diffusion
+ocean_cell_joules_postdiff_3dmat[:,:,0] = ocean_cell_initjoules_mat
 
+oce_temp_ini = (ocean_cell_initjoules_mat
+                / (WATER_HEAT_CAPACITY * ocean_cell_mass_gr_mat)) - 273.15
 
-ocean_cell_joules_prediff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving joules per cell PRE diffusion
-ocean_cell_joules_postdiff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving joules per cell POST diffusion
-ocean_cell_joulesperunitarea_postdiff_3dmat = ocean_cell_joules_postdiff_3dmat #ocean joules per unit area
-ocean_cell_joules_postdiff_3dmat_check = ocean_cell_joules_postdiff_3dmat #just for checking with the diffusion with HP50g
-ocean_cell_joules_prediff_3dmat[:,:,0] = ocean_cell_initjoules_mat #evolving joules per cell PRE diffusion
-ocean_cell_joules_postdiff_3dmat[:,:,0] = ocean_cell_initjoules_mat #evolving joules per cell POST diffusion
-
-OceTempINI = (ocean_cell_initjoules_mat/(4.186*ocean_cell_mass_gr_mat))-273.15 #initial temp (degC)
-
-
-ocean_cell_tempdeg_prediff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving temp (degC)
-ocean_cell_tempdeg_postdiff_3dmat = np.full((N_LAT, N_LONG,N_TIME_STEPS+1), np.nan) #evolving temp (degC)
-ocean_cell_tempdeg_prediff_3dmat[:,:,0] = OceTempINI #evolving temp (degC)
-ocean_cell_tempdeg_postdiff_3dmat[:,:,0] = OceTempINI #evolving temp (degC)
+ocean_cell_tempdeg_prediff_3dmat = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+ocean_cell_tempdeg_postdiff_3dmat = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+ocean_cell_tempdeg_prediff_3dmat[:,:,0] = oce_temp_ini  # evolving temp (degC)
+ocean_cell_tempdeg_postdiff_3dmat[:,:,0] = oce_temp_ini  # evolving temp (degC)
 
 atmos_cell_initjoules_mat = (ATMOSPHERE_INITIAL_TEMP+273.15)*1004*atmos_cell_mass_kg_mat
 
@@ -162,10 +173,7 @@ atmos_cell_tempdeg_prediff_3dmat[:,:,0] = atmos_cell_inittemp_deg_mat
 atmos_cell_tempdeg_postdiff_3dmat[:,:,0] = atmos_cell_inittemp_deg_mat
 
 
-    
-
-
-t_end=int(N_TIME_STEPS)    
+t_end=int(N_TIME_STEPS)
 
 tseries_mean_toa_solar_insol=np.full((t_end,1), np.nan) #to get the average SI across the planet
 tseries_ocean_atmos_mean_temp=np.full((t_end,4), np.nan)
