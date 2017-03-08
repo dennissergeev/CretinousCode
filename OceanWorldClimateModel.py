@@ -4,6 +4,9 @@
 Created on Sat Nov 12 15:05:47 2016
 @author: markprosser
 """
+
+#check
+
 from IPython import get_ipython
 get_ipython().magic('reset -f')  # NOQA
 # sys.path.append('PythFunctions')
