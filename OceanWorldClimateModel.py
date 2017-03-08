@@ -41,7 +41,7 @@ OCEAN_INITIAL_TEMP = -273.15  # initial temp of water degC
 ATMOSPHERE_INITIAL_TEMP = -273.15
 EARTH_RADIUS_M = 6371000  # m
 EARTH_CROSS_AREA = 2 * np.pi * EARTH_RADIUS_M ** 2
-EARTH_AREA = 5.14E14  # FIXME: shouldn't it be 14th power? - Yes it should MCP
+EARTH_AREA = 5.14E18  # FIXME: shouldn't it be 14th power?
 N_LAT = 5
 N_LONG = 3
 STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
@@ -130,8 +130,7 @@ frac_ocean_cell_area_m2_mat = (ocean_cell_area_m2_mat /
 assert frac_ocean_cell_area_m2_mat.sum() == 1, 'sum of this ARR should be 1'
 atmos_cell_mass_kg_mat = frac_ocean_cell_area_m2_mat * EARTH_AREA
 ocean_cell_vol_m3_mat = ocean_cell_area_m2_mat * OCEAN_DEPTH_M  # *m depth m^3
-
-# FIXME: multiply by density? - this is essentially what multiplying by 1 million is doing
+# FIXME: multiply by density?
 # get mass (gr) of water per cell
 ocean_cell_mass_gr_mat = ocean_cell_vol_m3_mat * 1000000
 ocean_cell_initjoules_mat = (ocean_cell_mass_gr_mat
