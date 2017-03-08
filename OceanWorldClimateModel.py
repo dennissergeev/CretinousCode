@@ -40,16 +40,15 @@ SOLAR_CONSTANT = 1361
 ALBEDO = 0.3
 OCEAN_INITIAL_TEMP = -273.15  # initial temp of water degC
 ATMOSPHERE_INITIAL_TEMP = -273.15
+ATMOS_MASS_KG = 5.14E18 #kg
 EARTH_RADIUS_M = 6371000  # m
-EARTH_CROSS_AREA = 2 * np.pi * EARTH_RADIUS_M ** 2
-EARTH_AREA = 5.10E14 
 N_LAT = 5
 N_LONG = 3
 STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
 ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
 WATER_HEAT_CAPACITY = 4.186  # CHECK
 DELTA_TIME_SECS = 3600
-N_TIME_STEPS = 40 * 24 * 1
+N_TIME_STEPS = 365 * 24 * 1
 DIFFUSION_X_CONSTANT = 800000  # diffusion constant in X #90000
 DIFFUSION_Y_CONSTANT = 800000  # 2500000 #diffusion constant in Y
 LASER_FROM_SPACE = 0  # 9999#99999
@@ -57,14 +56,16 @@ OCEAN_DEPTH_M = 1
 START_MONTH = 9
 MONTH_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-MY_DATE_LONDON = datetime.datetime(2001, START_MONTH, 21, 12, 0, 0)
 # maxNH %92days.*24
 
 # ********************** END OF INITIAL CONDITIONS INPUT **********************
+earth_hemisph_area = 2 * np.pi * EARTH_RADIUS_M ** 2
+earth_area = 4 * np.pi * EARTH_RADIUS_M ** 2
 lat_res_deg = 180 / N_LAT
 long_res_deg = 360 / N_LONG
 month = START_MONTH
 month_str = MONTH_LIST[month-1]
+my_date_london = datetime.datetime(2001, START_MONTH, 21, 12, 0, 0)
 
 xticks = np.arange(-180, 181, long_res_deg)
 yticks = np.arange(-90, 91, lat_res_deg)
@@ -112,8 +113,8 @@ albedo_mat[:] = ALBEDO
 # using HP 50g GLOBEARE prog methodology
 A = np.arange(N_LAT) * lat_res_deg - 90
 B = np.arange(1, N_LAT+1) * lat_res_deg - 90
-C = 0.5 * EARTH_AREA * (1 - np.sin(np.deg2rad(B)))
-D = 0.5 * EARTH_AREA * (1 - np.sin(np.deg2rad(A)))
+C = 0.5 * earth_area * (1 - np.sin(np.deg2rad(B)))
+D = 0.5 * earth_area * (1 - np.sin(np.deg2rad(A)))
 E = D - C
 
 ocean_cell_area_m2_mat[:] = E[:, np.newaxis] / N_LONG
@@ -128,8 +129,8 @@ ocean_cell_area_m2_mat_3d = ocean_cell_area_m2_mat[..., np.newaxis]
 # (as opposed to cell values)
 frac_ocean_cell_area_m2_mat = (ocean_cell_area_m2_mat /
                                ocean_cell_area_m2_mat.sum())
-assert frac_ocean_cell_area_m2_mat.sum() == 1, 'sum of this ARR should be 1'
-atmos_cell_mass_kg_mat = frac_ocean_cell_area_m2_mat * EARTH_AREA
+#assert frac_ocean_cell_area_m2_mat.sum() == 1, 'sum of this ARR should be 1'
+atmos_cell_mass_kg_mat = frac_ocean_cell_area_m2_mat * ATMOS_MASS_KG
 ocean_cell_vol_m3_mat = ocean_cell_area_m2_mat * OCEAN_DEPTH_M  # *m depth m^3
 # FIXME: multiply by density? - multiplying by 1 million is effectively doing that
 # get mass (gr) of water per cell
@@ -188,14 +189,14 @@ _get_sec = np.vectorize(lambda x: x.hour*3600 + x.minute*60 + x.second - 12*3600
 ###############################################################################   
 
 for t in range(t_end):
-    MY_DATE_LONDON = MY_DATE_LONDON + timedelta(hours=1)
-    print(t, MY_DATE_LONDON)
+    my_date_london = my_date_london + timedelta(hours=1)
+    print(t, my_date_london)
     tadj = midcell_long_mat / 180 * 12 * 3600
 
-    dts = MY_DATE_LONDON + tadj * timedelta(seconds=1)
+    dts = my_date_london + tadj * timedelta(seconds=1)
 
     tadj_sec = midcell_long_mat / 180 * 12 * 3600
-    datetime_adj = MY_DATE_LONDON + tadj_sec * timedelta(seconds=1)
+    datetime_adj = my_date_london + tadj_sec * timedelta(seconds=1)
 
     t_sec = _get_sec(datetime_adj)
     years = _get_year(datetime_adj)
@@ -474,7 +475,7 @@ print(tseries_ocean_atmos_mean_temp_area_weighted[t_end-1,:]) #This 2nd row give
 
 plt.figure(2)
 plt.title('Model ocean and atmosphere temperature evolution over time')
-x= np.arange('2001-09-21T12:00:00.0', MY_DATE_LONDON, dtype='datetime64[h]')
+x= np.arange('2001-09-21T12:00:00.0', my_date_london, dtype='datetime64[h]')
 
 y1=tseries_ocean_atmos_mean_temp[:,0]
 y2=tseries_ocean_atmos_mean_temp[:,1]
