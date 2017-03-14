@@ -87,10 +87,10 @@ ocean_cell_j_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
 # evolving joules per cell POST diffusion
 ocean_cell_j_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
 
-# TODO: remove unnessesary declarations, e.g. toa_solar_insol_2d
-# toa_solar_insol_2d = np.full((N_LAT, N_LONG), np.nan) #Solar Insolation
-solar_insol = np.full((N_LAT, N_LONG), np.nan)  # Solar Insolation * (1-AlBEDO)
-toa_solar_insol_perc = np.full((N_LAT, N_LONG), np.nan)  # Solar Insol Percent
+# TODO: remove unnessesary declarations, e.g. toa_insol_2d
+# toa_insol_2d = np.full((N_LAT, N_LONG), np.nan) #Solar Insolation
+alb_insol_2d = np.full((N_LAT, N_LONG), np.nan)  # Solar Insolation * (1-AlBEDO)
+toa_insol_perc = np.full((N_LAT, N_LONG), np.nan)  # Solar Insol Percent
 
 midcell_lat_2d[:] = np.arange(90-lat_res_deg/2,
                                -90+lat_res_deg/2-1,
@@ -176,7 +176,7 @@ atmos_cell_deg_postdiff_3d[:,:,0] = atmos_cell_init_deg_2d
 
 t_end=int(N_TIME_STEPS)
 
-tseries_mean_toa_solar_insol=np.full((t_end,1), np.nan) #to get the average SI across the planet
+tseries_mean_toa_insol=np.full((t_end,1), np.nan) #to get the average SI across the planet
 tseries_oa_mean_temp=np.full((t_end,4), np.nan)
 
 # Utility functions used to calculate insolation
@@ -223,13 +223,13 @@ for t in range(t_end):
                                    + np.cos(lat) * np.cos(delta) * np.cos(ha)
                                   )
                         ) #Solar Zenith Angle (DEG)
-    toa_solar_insol_2d = SOLAR_CONST*np.cos(np.deg2rad(theta_s))
-    toa_solar_insol_2d[np.cos(np.deg2rad(theta_s)) < 0] = 0
-    # toa_solar_insol_2dav[t,0]=np.mean(toa_solar_insol_2d)
-    solar_insol = toa_solar_insol_2d * (1 - albedo_2d)
-    toa_solar_insol_perc = toa_solar_insol_2d / SOLAR_CONST * 100
+    toa_insol_2d = SOLAR_CONST*np.cos(np.deg2rad(theta_s))
+    toa_insol_2d[np.cos(np.deg2rad(theta_s)) < 0] = 0
+    # toa_insol_2dav[t,0]=np.mean(toa_insol_2d)
+    alb_insol_2d = toa_insol_2d * (1 - albedo_2d)
+    toa_insol_perc = toa_insol_2d / SOLAR_CONST * 100
  
-    tseries_mean_toa_solar_insol[t, 0] = np.mean(toa_solar_insol_2d)  
+    tseries_mean_toa_insol[t, 0] = np.mean(toa_insol_2d)  
 
    
     tseries_oa_mean_temp[t,0]=np.mean(ocean_cell_deg_prediff_3d[:,:,t]) #ocean temp without diff
@@ -247,7 +247,7 @@ for t in range(t_end):
 ###############################################################################    
         
     #these are all fluxes per second
-    space2_ocean_flux = solar_insol*(ocean_cell_m2_2d)
+    space2_ocean_flux = alb_insol_2d*(ocean_cell_m2_2d)
 
     
     atmos2_ocean_flux = ocean_cell_m2_2d*STEF_BOLTZ_CONST*ATMOS_ABSORP_COEF*((atmos_cell_deg_prediff_3d[:,:,t]+273.15)**4)*0.5
@@ -283,8 +283,8 @@ for t in range(t_end):
     
         
         ocean_cell_jperunitarea_postdiff_2d=np.full((N_LAT, N_LONG), np.nan)
-        for j in range(0,len(toa_solar_insol_2d[0])):  
-            for i in range(0,len(toa_solar_insol_2d)):
+        for j in range(0,len(toa_insol_2d[0])):  
+            for i in range(0,len(toa_insol_2d)):
                 if i==0: #TOP ROW
                     ocean_cell_jperunitarea_postdiff_2d[i,j]=(((ocean_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
                                 + ((ocean_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
@@ -312,8 +312,8 @@ for t in range(t_end):
     
        
         atmos_cell_jperunitarea_postdiff_2d=np.full((N_LAT, N_LONG), np.nan)
-        for j in range(0,len(toa_solar_insol_2d[0])):  
-            for i in range(0,len(toa_solar_insol_2d)):
+        for j in range(0,len(toa_insol_2d[0])):  
+            for i in range(0,len(toa_insol_2d)):
                 if i==0: #TOP ROW
                     atmos_cell_jperunitarea_postdiff_2d[i,j]=(((atmos_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
                                 + ((atmos_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
