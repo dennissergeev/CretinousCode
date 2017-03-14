@@ -177,7 +177,7 @@ atmos_cell_deg_postdiff_3d[:,:,0] = atmos_cell_init_deg_2d
 t_end=int(N_TIME_STEPS)
 
 tseries_mean_toa_solar_insol=np.full((t_end,1), np.nan) #to get the average SI across the planet
-tseries_ocean_atmos_mean_temp=np.full((t_end,4), np.nan)
+tseries_oa_mean_temp=np.full((t_end,4), np.nan)
 
 # Utility functions used to calculate insolation
 _get_year = np.vectorize(lambda x: x.year)
@@ -232,10 +232,10 @@ for t in range(t_end):
     tseries_mean_toa_solar_insol[t, 0] = np.mean(toa_solar_insol_2d)  
 
    
-    tseries_ocean_atmos_mean_temp[t,0]=np.mean(ocean_cell_deg_prediff_3d[:,:,t]) #ocean temp without diff
-    tseries_ocean_atmos_mean_temp[t,1]=np.mean(ocean_cell_deg_postdiff_3d[:,:,t]) #ocean temp + DIFF
-    tseries_ocean_atmos_mean_temp[t,2]=np.mean(atmos_cell_deg_prediff_3d[:,:,t]) #atm temp without diff
-    tseries_ocean_atmos_mean_temp[t,3]=np.mean(atmos_cell_deg_postdiff_3d[:,:,t]) #atm temp + DIFF
+    tseries_oa_mean_temp[t,0]=np.mean(ocean_cell_deg_prediff_3d[:,:,t]) #ocean temp without diff
+    tseries_oa_mean_temp[t,1]=np.mean(ocean_cell_deg_postdiff_3d[:,:,t]) #ocean temp + DIFF
+    tseries_oa_mean_temp[t,2]=np.mean(atmos_cell_deg_prediff_3d[:,:,t]) #atm temp without diff
+    tseries_oa_mean_temp[t,3]=np.mean(atmos_cell_deg_postdiff_3d[:,:,t]) #atm temp + DIFF
     
     lat_band_area_prop=np.sum(ocean_cell_m2_2d, axis=1)/np.sum(ocean_cell_m2_2d) #latitude band as a proportion of total area
     lat_band_area_prop=lat_band_area_prop.reshape(len(lat_band_area_prop),1)
@@ -448,44 +448,44 @@ for t in range(t_end):
         show_plot()
 
 
-tseries_ocean_atmos_mean_temp_area_weighted=np.full((ocean_cell_j_prediff_3d.shape[2],4), np.nan)
+tseries_oa_mean_temp_area_weighted=np.full((ocean_cell_j_prediff_3d.shape[2],4), np.nan)
 tseries_ocean_nodiff_meantemp=np.mean(ocean_cell_deg_prediff_3d, axis=1)
 tseries_ocean_nodiff_meantemp=tseries_ocean_nodiff_meantemp*lat_band_area_prop
 tseries_ocean_nodiff_meantemp=np.sum(tseries_ocean_nodiff_meantemp, axis=0)
-tseries_ocean_atmos_mean_temp_area_weighted[:,0]=tseries_ocean_nodiff_meantemp
+tseries_oa_mean_temp_area_weighted[:,0]=tseries_ocean_nodiff_meantemp
 
 tseries_ocean_diff_meantemp=np.mean(ocean_cell_deg_postdiff_3d, axis=1)
 tseries_ocean_diff_meantemp=tseries_ocean_diff_meantemp*lat_band_area_prop
 tseries_ocean_diff_meantemp=np.sum(tseries_ocean_diff_meantemp, axis=0)
-tseries_ocean_atmos_mean_temp_area_weighted[:,1]=tseries_ocean_diff_meantemp
+tseries_oa_mean_temp_area_weighted[:,1]=tseries_ocean_diff_meantemp
 
 tseries_atmos_nodiff_meantemp=np.mean(atmos_cell_deg_prediff_3d, axis=1)
 tseries_atmos_nodiff_meantemp=tseries_atmos_nodiff_meantemp*lat_band_area_prop
 tseries_atmos_nodiff_meantemp=np.sum(tseries_atmos_nodiff_meantemp, axis=0)
-tseries_ocean_atmos_mean_temp_area_weighted[:,2]=tseries_atmos_nodiff_meantemp
+tseries_oa_mean_temp_area_weighted[:,2]=tseries_atmos_nodiff_meantemp
 
 tseries_atmos_diff_meantemp=np.mean(atmos_cell_deg_postdiff_3d, axis=1)
 tseries_atmos_diff_meantemp=tseries_atmos_diff_meantemp*lat_band_area_prop
 tseries_atmos_diff_meantemp=np.sum(tseries_atmos_diff_meantemp, axis=0)
-tseries_ocean_atmos_mean_temp_area_weighted[:,3]=tseries_atmos_diff_meantemp
+tseries_oa_mean_temp_area_weighted[:,3]=tseries_atmos_diff_meantemp
 
-print(tseries_ocean_atmos_mean_temp[t_end-1,:])
-print(tseries_ocean_atmos_mean_temp_area_weighted[t_end-1,:]) #This 2nd row gives you the more realistic average temp as weights the boxes according to area
+print(tseries_oa_mean_temp[t_end-1,:])
+print(tseries_oa_mean_temp_area_weighted[t_end-1,:]) #This 2nd row gives you the more realistic average temp as weights the boxes according to area
 
 
 plt.figure(2)
 plt.title('Model ocean and atmosphere temperature evolution over time')
 x= np.arange('2001-09-21T12:00:00.0', my_date_london, dtype='datetime64[h]')
 
-y1=tseries_ocean_atmos_mean_temp[:,0]
-y2=tseries_ocean_atmos_mean_temp[:,1]
-y3=tseries_ocean_atmos_mean_temp[:,2]
-y4=tseries_ocean_atmos_mean_temp[:,3]
+y1=tseries_oa_mean_temp[:,0]
+y2=tseries_oa_mean_temp[:,1]
+y3=tseries_oa_mean_temp[:,2]
+y4=tseries_oa_mean_temp[:,3]
 
-y5=tseries_ocean_atmos_mean_temp_area_weighted[0:-1,0]
-y6=tseries_ocean_atmos_mean_temp_area_weighted[0:-1,1]
-y7=tseries_ocean_atmos_mean_temp_area_weighted[0:-1,2]
-y8=tseries_ocean_atmos_mean_temp_area_weighted[0:-1,3]
+y5=tseries_oa_mean_temp_area_weighted[0:-1,0]
+y6=tseries_oa_mean_temp_area_weighted[0:-1,1]
+y7=tseries_oa_mean_temp_area_weighted[0:-1,2]
+y8=tseries_oa_mean_temp_area_weighted[0:-1,3]
 
 
 plt.plot(x,y5,'b',linewidth=1.0,label='oceanNODIFF')
