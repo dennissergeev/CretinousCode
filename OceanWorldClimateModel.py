@@ -48,7 +48,7 @@ STEFAN_BOLTZMANN_CONSTANT = 5.67E-8
 ATMOSPHERIC_ABSORPTION_COEFFICIENT = 0.7814
 WATER_HEAT_CAPACITY = 4.186  # CHECK
 DELTA_TIME_SECS = 3600
-N_TIME_STEPS = 365 * 24 * 1
+N_TIME_STEPS =  1
 DIFFUSION_X_CONSTANT = 800000  # diffusion constant in X #90000
 DIFFUSION_Y_CONSTANT = 800000  # 2500000 #diffusion constant in Y
 LASER_FROM_SPACE = 0  # 9999#99999
@@ -498,3 +498,5 @@ plt.xlabel('Time')
 plt.show()
 show_plot() #this is your function mcp!
 plt.close(1)
+
+help(np.vectorize)
