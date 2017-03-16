@@ -68,7 +68,7 @@ earth_area = 4 * np.pi * EARTH_RAD_M ** 2
 lat_res_deg = 180 / N_LAT
 long_res_deg = 360 / N_LONG
 month = START_MONTH
-month_str = MONTH_LIST[month-1]
+month_str = MONTH_LIST[month - 1]
 my_date_london = datetime(2001, START_MONTH, 21, 12, 0, 0)
 
 xticks = np.arange(-180, 181, long_res_deg)
@@ -87,20 +87,20 @@ ocean2_space_flux = np.full((N_LAT, N_LONG), np.nan)
 atmos2_space_flux = np.full((N_LAT, N_LONG), np.nan)
 ocean_cell_m2_2d = np.full((N_LAT, N_LONG), np.nan)
 # evolving joules per cell PRE diffusion
-ocean_cell_j_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+ocean_cell_j_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
 # evolving joules per cell POST diffusion
-ocean_cell_j_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+ocean_cell_j_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
 
 # TODO: remove unnessesary declarations, e.g. toa_insol_2d
 # toa_insol_2d = np.full((N_LAT, N_LONG), np.nan) #Solar Insolation
 alb_insol_2d = np.full((N_LAT, N_LONG), np.nan)  # Solar Insolation * (1-ALB)
 toa_insol_perc = np.full((N_LAT, N_LONG), np.nan)  # Solar Insol Percent
 
-midcell_lat_2d[:] = np.arange(90-lat_res_deg/2,
-                              -90+lat_res_deg/2-1,
+midcell_lat_2d[:] = np.arange(90 - lat_res_deg / 2,
+                              -90 + lat_res_deg / 2 - 1,
                               -lat_res_deg)[:, np.newaxis]
-midcell_long_2d[:] = np.arange(-180+long_res_deg/2,
-                               180-long_res_deg/2+1,
+midcell_long_2d[:] = np.arange(-180 + long_res_deg / 2,
+                               180 - long_res_deg / 2 + 1,
                                long_res_deg)[np.newaxis, :]
 
 cell_dy_m_2d[:] = (EARTH_RAD_M * np.pi) / N_LAT
@@ -116,7 +116,7 @@ albedo_2d[:] = ALBEDO
 # calculate the area of a grid cell
 # using HP 50g GLOBEARE prog methodology
 A = np.arange(N_LAT) * lat_res_deg - 90
-B = np.arange(1, N_LAT+1) * lat_res_deg - 90
+B = np.arange(1, N_LAT + 1) * lat_res_deg - 90
 C = 0.5 * earth_area * (1 - np.sin(np.deg2rad(B)))
 D = 0.5 * earth_area * (1 - np.sin(np.deg2rad(A)))
 E = D - C
@@ -152,19 +152,20 @@ ocean_cell_j_postdiff_3d[:, :, 0] = ocean_cell_init_j_2d
 oce_temp_ini = (ocean_cell_init_j_2d
                 / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0
 
-ocean_cell_deg_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
-ocean_cell_deg_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+ocean_cell_deg_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+ocean_cell_deg_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
 ocean_cell_deg_prediff_3d[:, :, 0] = oce_temp_ini  # evolving temp (degC)
 ocean_cell_deg_postdiff_3d[:, :, 0] = oce_temp_ini  # evolving temp (degC)
 
-atmos_cell_init_j_2d = (ATMOS_INIT_TEMP+T0)*AIR_HEAT_CAPAC*atmos_cell_kg_2d
+atmos_cell_init_j_2d = (ATMOS_INIT_TEMP + T0) * \
+                        AIR_HEAT_CAPAC * atmos_cell_kg_2d
 
-atmos_cell_j_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
-atmos_cell_j_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+atmos_cell_j_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+atmos_cell_j_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
 # atm joules per unit area
 atmos_cell_jperunitarea_postdiff_3d = atmos_cell_j_postdiff_3d
 # just for checking with the diffusion with HP50g
-atmos_cell_j_postdiff_3d_check = atmos_cell_j_postdiff_3d
+atmos_cell_j_postdiff_3d_check = atmos_cell_j_postdiff_3d.copy()
 atmos_cell_j_prediff_3d[:, :, 0] = atmos_cell_init_j_2d
 atmos_cell_j_postdiff_3d[:, :, 0] = atmos_cell_init_j_2d
 
@@ -172,8 +173,8 @@ atmos_cell_init_deg_2d = (atmos_cell_init_j_2d /
                           (atmos_cell_kg_2d * AIR_HEAT_CAPAC) - T0)
 
 
-atmos_cell_deg_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
-atmos_cell_deg_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS+1), np.nan)
+atmos_cell_deg_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+atmos_cell_deg_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
 atmos_cell_deg_prediff_3d[:, :, 0] = atmos_cell_init_deg_2d
 atmos_cell_deg_postdiff_3d[:, :, 0] = atmos_cell_init_deg_2d
 
@@ -186,7 +187,7 @@ _get_year = np.vectorize(lambda x: x.year)
 _get_doy = np.vectorize(lambda x: x.timetuple().tm_yday)
 _get_sec = np.vectorize(lambda x: x.hour * 3600
                         + x.minute * 60
-                        + x.second - 12*3600)
+                        + x.second - 12 * 3600)
 
 ######################### NOQA
 # MAIN TIME LOOP BEGINS #
@@ -219,7 +220,7 @@ for t in range(N_TIME_STEPS):
     gm = 357.528 + 0.9856003 * njd  # DEG
     lm = 280.460 + 0.9856474 * njd  # DEG
     lam_ec = (lm + 1.915 * np.sin(np.deg2rad(gm))
-              + 0.020*np.sin(np.deg2rad(2*gm)))  # in degrees?
+              + 0.020 * np.sin(np.deg2rad(2 * gm)))  # in degrees?
     eps_ob = 23.439 - 0.0000004 * njd  # DEG
     delta = np.arcsin(np.sin(np.deg2rad(eps_ob))
                       * np.sin(np.deg2rad(lam_ec)))  # Solar Declination Angle
@@ -228,7 +229,7 @@ for t in range(N_TIME_STEPS):
                                    + np.cos(lat) * np.cos(delta) * np.cos(ha)
                                    )
                          )  # Solar Zenith Angle (DEG)
-    toa_insol_2d = SOLAR_CONST*np.cos(np.deg2rad(theta_s))
+    toa_insol_2d = SOLAR_CONST * np.cos(np.deg2rad(theta_s))
     toa_insol_2d[np.cos(np.deg2rad(theta_s)) < 0] = 0
     # toa_insol_2dav[t,0]=np.mean(toa_insol_2d)
     alb_insol_2d = toa_insol_2d * (1 - albedo_2d)
@@ -239,11 +240,11 @@ for t in range(N_TIME_STEPS):
     # latitude band as a proportion of total area
     lat_band_area_prop = ocean_cell_m2_2d.sum(axis=1) / ocean_cell_m2_2d.sum()
 
-    ####################################### NOQA      
+    ####################################### NOQA
     # phase 1 add/subtract all the fluxes #
-    ####################################### NOQA    
+    ####################################### NOQA
     # these are all fluxes per second
-    space2_ocean_flux = alb_insol_2d*(ocean_cell_m2_2d)
+    space2_ocean_flux = alb_insol_2d * (ocean_cell_m2_2d)
 
     atmos2_ocean_flux = (ocean_cell_m2_2d * STEF_BOLTZ_CONST * ATM_ABSORP_COEF
                          * (atmos_cell_deg_prediff_3d[:, :, t] + T0) ** 4
@@ -254,212 +255,238 @@ for t in range(N_TIME_STEPS):
     ocean2_space_flux = surf_radiation * (1 - ATM_ABSORP_COEF)
     atmos2_space_flux = atmos2_ocean_flux
 
-    ocean_cell_j_prediff_3d[:, :, t+1] = ocean_cell_j_prediff_3d[:, :, t] + space2_ocean_flux * DELTA_SECS + atmos2_ocean_flux*DELTA_SECS - ocean2_space_flux*DELTA_SECS - ocean2_atmos_flux*DELTA_SECS
-    ocean_cell_deg_prediff_3d[:,:,t+1] = (ocean_cell_j_prediff_3d[:,:,t]/(WATER_HEAT_CAPAC*ocean_cell_gr_2d))-T0
-    atmos_cell_j_prediff_3d[:,:,t+1] = atmos_cell_j_prediff_3d[:,:,t] + ocean2_atmos_flux*DELTA_SECS - atmos2_ocean_flux*DELTA_SECS - atmos2_space_flux*DELTA_SECS
-    atmos_cell_deg_prediff_3d[:,:,t+1] = (atmos_cell_j_prediff_3d[:,:,t]/(atmos_cell_kg_2d*AIR_HEAT_CAPAC))-T0
+    ocean_cell_j_prediff_3d[:, :, t+1] = (ocean_cell_j_prediff_3d[:, :, t]
+                                          + space2_ocean_flux * DELTA_SECS
+                                          + atmos2_ocean_flux * DELTA_SECS
+                                          - ocean2_space_flux * DELTA_SECS
+                                          - ocean2_atmos_flux * DELTA_SECS)
+    ocean_cell_deg_prediff_3d[:, :, t+1] = (ocean_cell_j_prediff_3d[:, :, t]
+                                              / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0  # NOQA
+    atmos_cell_j_prediff_3d[:, :, t+1] = (atmos_cell_j_prediff_3d[:, :, t]
+                                          + ocean2_atmos_flux * DELTA_SECS
+                                          - atmos2_ocean_flux * DELTA_SECS
+                                          - atmos2_space_flux * DELTA_SECS)
+    atmos_cell_deg_prediff_3d[:, :, t+1] = atmos_cell_j_prediff_3d[:, :, t] / (atmos_cell_kg_2d * AIR_HEAT_CAPAC) - T0  # NOQA
 
-    ocean_cell_j_postdiff_3d[:,:,t+1] = ocean_cell_j_postdiff_3d[:,:,t] + space2_ocean_flux*DELTA_SECS + atmos2_ocean_flux*DELTA_SECS - ocean2_space_flux*DELTA_SECS - ocean2_atmos_flux*DELTA_SECS
-    ocean_cell_j_postdiff_3d_check[:,:,t+1] = ocean_cell_j_postdiff_3d[:,:,t+1]
-    atmos_cell_j_postdiff_3d[:,:,t+1] = atmos_cell_j_postdiff_3d[:,:,t] + ocean2_atmos_flux*DELTA_SECS - atmos2_ocean_flux*DELTA_SECS - atmos2_space_flux*DELTA_SECS   
-    atmos_cell_j_postdiff_3d_check[:,:,t+1] = atmos_cell_j_postdiff_3d[:,:,t+1]   
+    ocean_cell_j_postdiff_3d[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t]
+                                           + space2_ocean_flux * DELTA_SECS
+                                           + atmos2_ocean_flux * DELTA_SECS
+                                           - ocean2_space_flux * DELTA_SECS
+                                           - ocean2_atmos_flux * DELTA_SECS)
+    ocean_cell_j_postdiff_3d_check[:, :, t+1] = ocean_cell_j_postdiff_3d[:, :, t+1]  # NOQA
+    atmos_cell_j_postdiff_3d[:, :, t+1] = (atmos_cell_j_postdiff_3d[:, :, t]
+                                           + ocean2_atmos_flux * DELTA_SECS
+                                           - atmos2_ocean_flux * DELTA_SECS
+                                           - atmos2_space_flux * DELTA_SECS)
+    atmos_cell_j_postdiff_3d_check[
+        :, :, t+1] = atmos_cell_j_postdiff_3d[:, :, t+1]  # why does it exist?
 
-    ocean_cell_jperunitarea_postdiff_3d[:,:,t+1] = ocean_cell_j_postdiff_3d[:,:,t+1]/ocean_cell_m2_2d#ReShaped #ocean joules per m^2
-    atmos_cell_jperunitarea_postdiff_3d[:,:,t+1] = atmos_cell_j_postdiff_3d[:,:,t+1]/ocean_cell_m2_2d#ReShaped #atm joules per m^2
-
-
+    ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] = ocean_cell_j_postdiff_3d[:, :, t+1] / ocean_cell_m2_2d  # NOQA ReShaped #ocean joules per m^2
+    atmos_cell_jperunitarea_postdiff_3d[:, :, t+1] = atmos_cell_j_postdiff_3d[:, :, t+1] / ocean_cell_m2_2d  # NOQA ReShaped #atm joules per m^2
 
     if (opt2 == 1) or (opt2 == 3):
-        ####################################### NOQA   
+        ####################################### NOQA
         # phase 2a include diffusion in Ocean #
         ####################################### NOQA
 
-        ocean_cell_jperunitarea_postdiff_2d=np.full((N_LAT, N_LONG), np.nan)
-        for j in range(0,len(toa_insol_2d[0])):  
-            for i in (0,len(toa_insol_2d)-1):
-                print(i)
-                if i==0: #TOP ROW
-                    ocean_cell_jperunitarea_postdiff_2d[i,j]=(((ocean_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
-                                + ((ocean_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
-                                + ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]
-                
-                elif i==len(midcell_lat_2d)-1: #BOTTOM ROW
-                    ocean_cell_jperunitarea_postdiff_2d[i,j]=(((ocean_cell_jperunitarea_postdiff_3d[i-1,j,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
-                                + ((ocean_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
-                                + ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]
+        ocean_cell_jperunitarea_postdiff_2d = np.full((N_LAT, N_LONG), np.nan)
+        for j in range(N_LAT):
+            wtf1 = int(j + N_LONG / 2) % N_LONG
+            wtf2 = (j + 1) % N_LONG
+            # i = 0
+            _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, wtf1, t+1]
+                        - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
+                        + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
+                       * DIFF_Y_CONST) / (cell_dy_m_2d[0, j]**2)
+            _y_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, j-1, t+1]
+                        - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
+                        + ocean_cell_jperunitarea_postdiff_3d[0, wtf2, t+1])
+                       * DIFF_X_CONST) / (cell_dx_m_2d[0, j]**2)
+            ocean_cell_jperunitarea_postdiff_2d[0, j] = ((_x_diff + _y_diff) * DELTA_SECS
+                                                         + ocean_cell_jperunitarea_postdiff_3d[0, j, t+1])  # NOQA
 
-                                
-        ocean_cell_jperunitarea_postdiff_2d[1:N_LAT-1,0:N_LONG]=\
-        (((np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=0)[1:N_LAT-1,0:N_LONG] #roll down
-        -2*ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
-        +np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=0)[1:N_LAT-1,0:N_LONG])  #roll up
-        
-        *(DIFF_Y_CONST/(cell_dy_m_2d[1:N_LAT-1,0:N_LONG]**2)))
+            # i = last - 1
+            _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf1, t+1]
+                        - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
+                        + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
+                       * DIFF_Y_CONST) / (cell_dy_m_2d[N_LAT-1, j]**2)
+            _y_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j-1, t+1]
+                        - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
+                        + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf2, t+1])
+                       * DIFF_X_CONST) / (cell_dx_m_2d[N_LAT-1, j]**2)
+            ocean_cell_jperunitarea_postdiff_2d[N_LAT-1, j] = ((_x_diff + _y_diff) * DELTA_SECS
+                                                         + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1])  # NOQA
 
-         + ((np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=1)[1:N_LAT-1,0:N_LONG] #roll right
-         -2*ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
-         +np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=1)[1:N_LAT-1,0:N_LONG]) #roll left
-         
-         *(DIFF_X_CONST/(cell_dx_m_2d[1:N_LAT-1,0:N_LONG]**2))))*DELTA_SECS\
-        
-        + ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]
-                    
-        ocean_cell_jperunitarea_postdiff_3d[:,:,t+1] = ocean_cell_jperunitarea_postdiff_2d #transfers back
-        ocean_cell_j_postdiff_3d[:,:,t+1] = ocean_cell_jperunitarea_postdiff_3d[:,:,t+1]*ocean_cell_m2_2d #converting back from j/m^2 to j
-        ocean_cell_deg_postdiff_3d[:,:,t+1] = (ocean_cell_j_postdiff_3d[:,:,t+1]/(WATER_HEAT_CAPAC*ocean_cell_gr_2d))-T0
+        ocean_cell_jperunitarea_postdiff_2d[1:N_LAT-1, :N_LONG] =\
+        (((np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=0)[1:N_LAT - 1, 0:N_LONG]  # roll down
+        - 2 * ocean_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
+        + np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=0)[1:N_LAT - 1, 0:N_LONG])  # roll up
 
+        * (DIFF_Y_CONST / (cell_dy_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))
+
+         + ((np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=1)[1:N_LAT - 1, 0:N_LONG]  # roll right
+         - 2 * ocean_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
+         + np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=1)[1:N_LAT - 1, 0:N_LONG])  # roll left
+
+         * (DIFF_X_CONST / (cell_dx_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))) * DELTA_SECS\
+
+        + ocean_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]
+
+        ocean_cell_jperunitarea_postdiff_3d[
+            :, :, t + 1] = ocean_cell_jperunitarea_postdiff_2d  # transfers back
+        ocean_cell_j_postdiff_3d[:, :, t + 1] = ocean_cell_jperunitarea_postdiff_3d[
+            :, :, t + 1] * ocean_cell_m2_2d  # converting back from j/m^2 to j
+        ocean_cell_deg_postdiff_3d[:, :, t + 1] = (ocean_cell_j_postdiff_3d[
+                                                   :, :, t + 1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0
 
     if (opt2 == 2) or (opt2 == 3):
 
         ############################################ NOQA
         # phase 2b include diffusion in Atmosphere #
         ############################################ NOQA
-    
-       
-        atmos_cell_jperunitarea_postdiff_2d=np.full((N_LAT, N_LONG), np.nan)
-        for j in range(0,len(toa_insol_2d[0])):  
-            for i in (0,len(toa_insol_2d)-1):
-                if i==0: #TOP ROW
-                    atmos_cell_jperunitarea_postdiff_2d[i,j]=(((atmos_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
-                                + ((atmos_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
-                                + atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]
 
-                elif i==len(midcell_lat_2d)-1: #BOTTOM ROW
-                    atmos_cell_jperunitarea_postdiff_2d[i,j]=(((atmos_cell_jperunitarea_postdiff_3d[i-1,j,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
-                                + ((atmos_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
-                                + atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]
-                                
-                                
-        atmos_cell_jperunitarea_postdiff_2d[1:N_LAT-1,0:N_LONG]=\
-        (((np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=0)[1:N_LAT-1,0:N_LONG] #roll down
-        -2*atmos_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
-        +np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=0)[1:N_LAT-1,0:N_LONG])  #roll up
-        
-        *(DIFF_Y_CONST/(cell_dy_m_2d[1:N_LAT-1,0:N_LONG]**2)))
+        atmos_cell_jperunitarea_postdiff_2d = np.full((N_LAT, N_LONG), np.nan)
+        for j in range(toa_insol_2d.shape[1]):
+            for i in (0, len(toa_insol_2d) - 1):
+                if i == 0:  # TOP ROW
+                    atmos_cell_jperunitarea_postdiff_2d[i, j] = (((atmos_cell_jperunitarea_postdiff_3d[i, int(j + len(midcell_lat_2d[0]) / 2) % len(midcell_lat_2d[0]), t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i + 1, j, t + 1]) * DIFF_Y_CONST) / (cell_dy_m_2d[i, j]**2)
+                                + ((atmos_cell_jperunitarea_postdiff_3d[i, j - 1, t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i, (j + 1) % len(midcell_lat_2d[0]), t + 1]) * DIFF_X_CONST) / (cell_dx_m_2d[i, j]**2)) * DELTA_SECS\
+                                + atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1]
 
-         + ((np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=1)[1:N_LAT-1,0:N_LONG] #roll right
-         -2*atmos_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
-         +np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=1)[1:N_LAT-1,0:N_LONG]) #roll left
-         
-         *(DIFF_X_CONST/(cell_dx_m_2d[1:N_LAT-1,0:N_LONG]**2))))*DELTA_SECS\
-        
-        + atmos_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]
+                elif i == len(midcell_lat_2d) - 1:  # BOTTOM ROW
+                    atmos_cell_jperunitarea_postdiff_2d[i, j] = (((atmos_cell_jperunitarea_postdiff_3d[i - 1, j, t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i, int(j + len(midcell_lat_2d[0]) / 2) % len(midcell_lat_2d[0]), t + 1]) * DIFF_Y_CONST) / (cell_dy_m_2d[i, j]**2)
+                                + ((atmos_cell_jperunitarea_postdiff_3d[i, j - 1, t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i, (j + 1) % len(midcell_lat_2d[0]), t + 1]) * DIFF_X_CONST) / (cell_dx_m_2d[i, j]**2)) * DELTA_SECS\
+                                + atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1]
 
-        atmos_cell_jperunitarea_postdiff_3d[:,:,t+1] = atmos_cell_jperunitarea_postdiff_2d #transfers back
-        atmos_cell_j_postdiff_3d[:,:,t+1] = atmos_cell_jperunitarea_postdiff_3d[:,:,t+1]*ocean_cell_m2_2d #converting back from j/m^2 to j
-        atmos_cell_deg_postdiff_3d[:,:,t+1] = (atmos_cell_j_postdiff_3d[:,:,t+1]/(AIR_HEAT_CAPAC*atmos_cell_kg_2d))-T0
-        
+        atmos_cell_jperunitarea_postdiff_2d[1:N_LAT - 1, 0:N_LONG] =\
+        (((np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=0)[1:N_LAT - 1, 0:N_LONG]  # roll down
+        - 2 * atmos_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
+        + np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=0)[1:N_LAT - 1, 0:N_LONG])  # roll up
+
+        * (DIFF_Y_CONST / (cell_dy_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))
+
+         + ((np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=1)[1:N_LAT - 1, 0:N_LONG]  # roll right
+         - 2 * atmos_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
+         + np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=1)[1:N_LAT - 1, 0:N_LONG])  # roll left
+
+         * (DIFF_X_CONST / (cell_dx_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))) * DELTA_SECS\
+
+        + atmos_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]
+
+        atmos_cell_jperunitarea_postdiff_3d[
+            :, :, t + 1] = atmos_cell_jperunitarea_postdiff_2d  # transfers back
+        atmos_cell_j_postdiff_3d[:, :, t + 1] = atmos_cell_jperunitarea_postdiff_3d[
+            :, :, t + 1] * ocean_cell_m2_2d  # converting back from j/m^2 to j
+        atmos_cell_deg_postdiff_3d[
+            :, :, t + 1] = (atmos_cell_j_postdiff_3d[:, :, t + 1] / (AIR_HEAT_CAPAC * atmos_cell_kg_2d)) - T0
+
 
 ##### end #####
 
+    if t % (24 * 30) == 0:
+        month = month + 1
+        if month > 12:
+            month = month % 12
 
-
-        
-    if t%(24*30)==0:
-        month=month+1
-        if month>12:
-            month=month%12
-        
         plt.clf()
 
-        month_str = (MONTH_LIST[month-1])
+        month_str = (MONTH_LIST[month - 1])
 
-        
-        plt.figure(10,figsize=(15,10))
+        plt.figure(10, figsize=(15, 10))
         plt.subplot(3, 2, 1)
-        plt.text(0.05,18.5,'A',fontsize=12)
+        plt.text(0.05, 18.5, 'A', fontsize=12)
 
-        
-        plt.pcolor(np.flipud(ocean_cell_deg_prediff_3d[:,:,t]), cmap='bwr')
-        plt.xticks( np.arange(0,xticks.shape[0]), xticks )
-        plt.yticks( np.arange(0,yticks.shape[0]), yticks )
-        clb=plt.colorbar()
-        clb.set_label('DegC',rotation=270)
+        plt.pcolor(np.flipud(ocean_cell_deg_prediff_3d[:, :, t]), cmap='bwr')
+        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
+        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
+        clb = plt.colorbar()
+        clb.set_label('DegC', rotation=270)
         plt.clim(-T0, T0)
         plt.title("No diffusion ocean-" + str(month_str) + "-" + str(t))
         plt.ylabel('Degrees Latitude')
-        
-        
+
         plt.subplot(3, 2, 2)
         plt.ylabel('Degrees Latitude')
-        plt.text(0.05,18.5,'D',fontsize=12)
+        plt.text(0.05, 18.5, 'D', fontsize=12)
 
-        
-        plt.pcolor(np.flipud(ocean_cell_deg_postdiff_3d[:,:,t]), cmap='bwr')
-        plt.xticks( np.arange(0,xticks.shape[0]), xticks )
-        plt.yticks( np.arange(0,yticks.shape[0]), yticks )
+        plt.pcolor(np.flipud(ocean_cell_deg_postdiff_3d[:, :, t]), cmap='bwr')
+        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
+        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
         plt.show()
-        clb=plt.colorbar()
-        clb.set_label('DegC',rotation=270)
+        clb = plt.colorbar()
+        clb.set_label('DegC', rotation=270)
         plt.clim(-T0, T0)
         plt.title("Diffusion ocean-" + str(month_str) + "-" + str(t))
-        
-        
+
         plt.subplot(3, 2, 3)
-        plt.text(0.05,18.5,'B',fontsize=12)
+        plt.text(0.05, 18.5, 'B', fontsize=12)
         plt.ylabel('Degrees Latitude')
 
-         
-        plt.pcolor(np.flipud(atmos_cell_deg_prediff_3d[:,:,t]), cmap='bwr')
-        plt.xticks( np.arange(0,xticks.shape[0]), xticks )
-        plt.yticks( np.arange(0,yticks.shape[0]), yticks )
-        clb=plt.colorbar()
-        clb.set_label('DegC',rotation=270)
+        plt.pcolor(np.flipud(atmos_cell_deg_prediff_3d[:, :, t]), cmap='bwr')
+        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
+        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
+        clb = plt.colorbar()
+        clb.set_label('DegC', rotation=270)
         plt.clim(-T0, T0)
         plt.title("No diffusion atmosphere-" + str(month_str) + "-" + str(t))
-        
-        
+
         plt.subplot(3, 2, 4)
         plt.ylabel('Degrees Latitude')
-        plt.text(0.05,18.5,'E',fontsize=12)
+        plt.text(0.05, 18.5, 'E', fontsize=12)
 
-         
-        plt.pcolor(np.flipud(atmos_cell_deg_postdiff_3d[:,:,t]), cmap='bwr')
-        plt.xticks( np.arange(0,xticks.shape[0]), xticks )
-        plt.yticks( np.arange(0,yticks.shape[0]), yticks )
+        plt.pcolor(np.flipud(atmos_cell_deg_postdiff_3d[:, :, t]), cmap='bwr')
+        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
+        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
         plt.show()
-        clb=plt.colorbar()
-        clb.set_label('DegC',rotation=270)
+        clb = plt.colorbar()
+        clb.set_label('DegC', rotation=270)
         plt.clim(-T0, T0)
         plt.title("Diffusion atmosphere-" + str(month_str) + "-" + str(t))
-        
-        
+
         plt.subplot(3, 2, 5)
         plt.ylabel('Degrees Latitude')
         plt.xlabel('Temperature (Degrees C)')
 
-      
-        ocean_cell_deg_prediff_latmean=ocean_cell_deg_prediff_3d[:,:,t]
-        ocean_cell_deg_prediff_latmean=np.mean(ocean_cell_deg_prediff_latmean, axis=1)
-        atmos_cell_deg_prediff_latmean=atmos_cell_deg_prediff_3d[:,:,t]
-        atmos_cell_deg_prediff_latmean=np.mean(atmos_cell_deg_prediff_latmean, axis=1)
-        midcell_lat_y1 = np.arange(midcell_lat_2d[-1,0],midcell_lat_2d[0,0]+(midcell_lat_2d[0,0]-midcell_lat_2d[1,0]),180/midcell_lat_2d.shape[0])
+        ocean_cell_deg_prediff_latmean = ocean_cell_deg_prediff_3d[:, :, t]
+        ocean_cell_deg_prediff_latmean = np.mean(
+            ocean_cell_deg_prediff_latmean, axis=1)
+        atmos_cell_deg_prediff_latmean = atmos_cell_deg_prediff_3d[:, :, t]
+        atmos_cell_deg_prediff_latmean = np.mean(
+            atmos_cell_deg_prediff_latmean, axis=1)
+        midcell_lat_y1 = np.arange(midcell_lat_2d[-1, 0], midcell_lat_2d[0, 0] + (
+            midcell_lat_2d[0, 0] - midcell_lat_2d[1, 0]), 180 / midcell_lat_2d.shape[0])
         midcell_lat_y1 = np.flipud(midcell_lat_y1)
-        plt.plot(ocean_cell_deg_prediff_latmean,midcell_lat_y1,'b',label='ocean')
-        plt.plot(atmos_cell_deg_prediff_latmean,midcell_lat_y1,'r',label='atmos')
-        plt.legend(loc='upper right',prop={'size':10})
+        plt.plot(ocean_cell_deg_prediff_latmean,
+                 midcell_lat_y1, 'b', label='ocean')
+        plt.plot(atmos_cell_deg_prediff_latmean,
+                 midcell_lat_y1, 'r', label='atmos')
+        plt.legend(loc='upper right', prop={'size': 10})
         plt.clim(-T0, T0)
-        plt.title("C No diffusion lat-temp-profile-" + str(month_str) + "-" + str(t))
-        
-        
+        plt.title("C No diffusion lat-temp-profile-" +
+                  str(month_str) + "-" + str(t))
+
         plt.subplot(3, 2, 6)
         plt.ylabel('Degrees Latitude')
         plt.xlabel('Degrees C')
 
-        
-        ocean_cell_deg_postdiff_latmean=ocean_cell_deg_postdiff_3d[:,:,t]
-        ocean_cell_deg_postdiff_latmean=np.mean(ocean_cell_deg_postdiff_latmean, axis=1)
-        atmos_cell_deg_postdiff_latmean=atmos_cell_deg_postdiff_3d[:,:,t]
-        atmos_cell_deg_postdiff_latmean=np.mean(atmos_cell_deg_postdiff_latmean, axis=1)
-        midcell_lat_y2 = np.arange(midcell_lat_2d[-1,0],midcell_lat_2d[0,0]+(midcell_lat_2d[0,0]-midcell_lat_2d[1,0]),180/midcell_lat_2d.shape[0])
+        ocean_cell_deg_postdiff_latmean = ocean_cell_deg_postdiff_3d[:, :, t]
+        ocean_cell_deg_postdiff_latmean = np.mean(
+            ocean_cell_deg_postdiff_latmean, axis=1)
+        atmos_cell_deg_postdiff_latmean = atmos_cell_deg_postdiff_3d[:, :, t]
+        atmos_cell_deg_postdiff_latmean = np.mean(
+            atmos_cell_deg_postdiff_latmean, axis=1)
+        midcell_lat_y2 = np.arange(midcell_lat_2d[-1, 0], midcell_lat_2d[0, 0] + (
+            midcell_lat_2d[0, 0] - midcell_lat_2d[1, 0]), 180 / midcell_lat_2d.shape[0])
         midcell_lat_y2 = np.flipud(midcell_lat_y2)
-        plt.plot(ocean_cell_deg_postdiff_latmean,midcell_lat_y2,'b',label='ocean')
-        plt.plot(atmos_cell_deg_postdiff_latmean,midcell_lat_y2,'r',label='atmos')
-        plt.legend(loc='upper right',prop={'size':10})
+        plt.plot(ocean_cell_deg_postdiff_latmean,
+                 midcell_lat_y2, 'b', label='ocean')
+        plt.plot(atmos_cell_deg_postdiff_latmean,
+                 midcell_lat_y2, 'r', label='atmos')
+        plt.legend(loc='upper right', prop={'size': 10})
         plt.show()
         plt.clim(-T0, T0)
-        plt.title("F diffusion lat-temp-profile-" + str(month_str) + "-" + str(t))
-
+        plt.title("F diffusion lat-temp-profile-" +
+                  str(month_str) + "-" + str(t))
 
         plt.pause(0.1)
         show_plot()
@@ -474,17 +501,17 @@ _arrs = (ocean_cell_deg_prediff_3d,
 for i, arr in enumerate(_arrs):
     mean_arr = arr.mean(axis=1)
     mean_arr *= lat_band_area_prop[:, np.newaxis])
-    tseries_oa_mean_temp_area_weighted[:, i] = mean_arr.sum(axis=0)
+    tseries_oa_mean_temp_area_weighted[:, i]=mean_arr.sum(axis = 0)
 
-y1 = ocean_cell_deg_prediff_3d.mean(axis=(0, 1))  # ocean temp without diff
-y2 = ocean_cell_deg_postdiff_3d.mean(axis=(0, 1))  # ocean temp + DIFF
-y3 = atmos_cell_deg_prediff_3d.mean(axis=(0, 1))  # atm temp without diff
-y4 = atmos_cell_deg_postdiff_3d.mean(axis=(0, 1))  # atm temp + DIFF
+y1=ocean_cell_deg_prediff_3d.mean(axis = (0, 1))  # ocean temp without diff
+y2=ocean_cell_deg_postdiff_3d.mean(axis = (0, 1))  # ocean temp + DIFF
+y3=atmos_cell_deg_prediff_3d.mean(axis = (0, 1))  # atm temp without diff
+y4=atmos_cell_deg_postdiff_3d.mean(axis = (0, 1))  # atm temp + DIFF
 
-print('ocean temp without diff: {}'.format(y1[N_TIME_STEPS-1))
-print('ocean temp + DIFF      : {}'.format(y2[N_TIME_STEPS-1))
-print('atm temp without diff  : {}'.format(y3[N_TIME_STEPS-1))
-print('atm temp + DIFF        : {}'.format(y4[N_TIME_STEPS-1))
+print('ocean temp without diff: {}'.format(y1[N_TIME_STEPS - 1))
+print('ocean temp + DIFF      : {}'.format(y2[N_TIME_STEPS - 1))
+print('atm temp without diff  : {}'.format(y3[N_TIME_STEPS - 1))
+print('atm temp + DIFF        : {}'.format(y4[N_TIME_STEPS - 1))
 # This 2nd row gives you the more realistic
 # average temp as weights the boxes according to area
 print(tseries_oa_mean_temp_area_weighted[N_TIME_STEPS - 1, :])
@@ -492,25 +519,25 @@ print(tseries_oa_mean_temp_area_weighted[N_TIME_STEPS - 1, :])
 
 plt.figure(2)
 plt.title('Model ocean and atmosphere temperature evolution over time')
-x= np.arange('2001-09-21T12:00:00.0', my_date_london, dtype='datetime64[h]')
+x = np.arange('2001-09-21T12:00:00.0', my_date_london, dtype='datetime64[h]')
 
-y5=tseries_oa_mean_temp_area_weighted[0:-1,0]
-y6=tseries_oa_mean_temp_area_weighted[0:-1,1]
-y7=tseries_oa_mean_temp_area_weighted[0:-1,2]
-y8=tseries_oa_mean_temp_area_weighted[0:-1,3]
+y5 = tseries_oa_mean_temp_area_weighted[0:-1, 0]
+y6 = tseries_oa_mean_temp_area_weighted[0:-1, 1]
+y7 = tseries_oa_mean_temp_area_weighted[0:-1, 2]
+y8 = tseries_oa_mean_temp_area_weighted[0:-1, 3]
 
 
-plt.plot(x,y5,'b',linewidth=1.0,label='oceanNODIFF')
-plt.plot(x,y6,'b--',linewidth=1.0,label='oceanDIFF')
-plt.plot(x,y7,'r',linewidth=1.0,label='atmosNODIFF')
-plt.plot(x,y8,'r--',linewidth=1.0,label='atmosDIFF')
-plt.legend(loc='lower right',prop={'size':14})
+plt.plot(x, y5, 'b', linewidth=1.0, label='oceanNODIFF')
+plt.plot(x, y6, 'b--', linewidth=1.0, label='oceanDIFF')
+plt.plot(x, y7, 'r', linewidth=1.0, label='atmosNODIFF')
+plt.plot(x, y8, 'r--', linewidth=1.0, label='atmosDIFF')
+plt.legend(loc='lower right', prop={'size': 14})
 plt.ylabel('Temperature (Degrees C)')
 plt.xlabel('Time')
 plt.show()
-show_plot() #this is your function mcp!
+show_plot()  # this is your function mcp!
 plt.close(1)
 
-#AAA= np.array([[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]])
-##AAA=AAA[1:3,1:3]
-#AAAA=   np.roll(AAA,1,axis=1)[1:N_LAT-1,0:N_LONG]
+# AAA= np.array([[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]])
+# AAA=AAA[1:3,1:3]
+# AAAA=   np.roll(AAA,1,axis=1)[1:N_LAT-1,0:N_LONG]
