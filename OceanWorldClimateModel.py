@@ -4,14 +4,16 @@
 Created on Sat Nov 12 15:05:47 2016
 @author: markprosser
 """
-
-from IPython import get_ipython
-get_ipython().magic('reset -f')  # NOQA
+try:
+    # To be run in Spyder
+    from IPython import get_ipython
+    get_ipython().magic('reset -f')  # NOQA
+except:
+    pass
 # sys.path.append('PythFunctions')
+from datetime import datetime, timedelta
 import numpy as np
 import matplotlib.pyplot as plt
-import datetime
-from datetime import timedelta
 # from Function import show_plot
 plt.close("all")
 
@@ -65,7 +67,7 @@ lat_res_deg = 180 / N_LAT
 long_res_deg = 360 / N_LONG
 month = START_MONTH
 month_str = MONTH_LIST[month-1]
-my_date_london = datetime.datetime(2001, START_MONTH, 21, 12, 0, 0)
+my_date_london = datetime(2001, START_MONTH, 21, 12, 0, 0)
 
 xticks = np.arange(-180, 181, long_res_deg)
 yticks = np.arange(-90, 91, lat_res_deg)
