@@ -37,7 +37,7 @@ opt2 = 3
 # 2=Atmsopherediffusion only
 # 3=both
 
-T0 = T0
+T0 = 273.15
 # PoleFrac=0.99
 SOLAR_CONST = 1361
 ALBEDO = 0.3
@@ -290,30 +290,30 @@ for t in range(N_TIME_STEPS):
         ####################################### NOQA
 
         ocean_cell_jperunitarea_postdiff_2d = np.full((N_LAT, N_LONG), np.nan)
-        for j in range(N_LAT):
+        for j in range(N_LONG):
             wtf1 = int(j + N_LONG / 2) % N_LONG
             wtf2 = (j + 1) % N_LONG
-            # TOP (MOST EASTERLY) ROW (i = 0)
+            # TOP ROW (i = 0)
             _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, wtf1, t+1]
                         - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
                         + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
-                       * DIFF_Y_CONST) / (cell_dy_m_2d[0, j]**2)
+                       * DIFF_X_CONST) / (cell_dy_m_2d[0, j]**2)
             _y_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, j-1, t+1]
                         - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
                         + ocean_cell_jperunitarea_postdiff_3d[0, wtf2, t+1])
-                       * DIFF_X_CONST) / (cell_dx_m_2d[0, j]**2)
+                       * DIFF_Y_CONST) / (cell_dx_m_2d[0, j]**2)
             ocean_cell_jperunitarea_postdiff_2d[0, j] = ((_x_diff + _y_diff) * DELTA_SECS
                                                          + ocean_cell_jperunitarea_postdiff_3d[0, j, t+1])  # NOQA
 
-            # BOTTOM (MOST WESTERLY) ROW (i = last - 1)
+            # BOTTOM ROW (i = last - 1)
             _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf1, t+1]
                         - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
                         + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
-                       * DIFF_Y_CONST) / (cell_dy_m_2d[N_LAT-1, j]**2)
+                       * DIFF_X_CONST) / (cell_dy_m_2d[N_LAT-1, j]**2)
             _y_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j-1, t+1]
                         - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
                         + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf2, t+1])
-                       * DIFF_X_CONST) / (cell_dx_m_2d[N_LAT-1, j]**2)
+                       * DIFF_Y_CONST) / (cell_dx_m_2d[N_LAT-1, j]**2)
             ocean_cell_jperunitarea_postdiff_2d[N_LAT-1, j] = ((_x_diff + _y_diff) * DELTA_SECS
                                                                + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1])  # NOQA
 
@@ -494,18 +494,18 @@ _arrs = (ocean_cell_deg_prediff_3d,
          atmos_cell_deg_postdiff_3d)
 for i, arr in enumerate(_arrs):
     mean_arr = arr.mean(axis=1)
-    mean_arr *= lat_band_area_prop[:, np.newaxis])
-    tseries_oa_mean_temp_area_weighted[:, i]=mean_arr.sum(axis = 0)
+    mean_arr *= lat_band_area_prop[:, np.newaxis]
+    tseries_oa_mean_temp_area_weighted[:, i] = mean_arr.sum(axis = 0)
 
-y1=ocean_cell_deg_prediff_3d.mean(axis = (0, 1))  # ocean temp without diff
-y2=ocean_cell_deg_postdiff_3d.mean(axis = (0, 1))  # ocean temp + DIFF
-y3=atmos_cell_deg_prediff_3d.mean(axis = (0, 1))  # atm temp without diff
-y4=atmos_cell_deg_postdiff_3d.mean(axis = (0, 1))  # atm temp + DIFF
+y1 = ocean_cell_deg_prediff_3d.mean(axis=(0, 1))  # ocean temp without diff
+y2 = ocean_cell_deg_postdiff_3d.mean(axis=(0, 1))  # ocean temp + DIFF
+y3 = atmos_cell_deg_prediff_3d.mean(axis=(0, 1))  # atm temp without diff
+y4 = atmos_cell_deg_postdiff_3d.mean(axis=(0, 1))  # atm temp + DIFF
 
-print('ocean temp without diff: {}'.format(y1[N_TIME_STEPS - 1))
-print('ocean temp + DIFF      : {}'.format(y2[N_TIME_STEPS - 1))
-print('atm temp without diff  : {}'.format(y3[N_TIME_STEPS - 1))
-print('atm temp + DIFF        : {}'.format(y4[N_TIME_STEPS - 1))
+print('ocean temp without diff: {}'.format(y1[N_TIME_STEPS - 1]))
+print('ocean temp + DIFF      : {}'.format(y2[N_TIME_STEPS - 1]))
+print('atm temp without diff  : {}'.format(y3[N_TIME_STEPS - 1]))
+print('atm temp + DIFF        : {}'.format(y4[N_TIME_STEPS - 1]))
 # This 2nd row gives you the more realistic
 # average temp as weights the boxes according to area
 print(tseries_oa_mean_temp_area_weighted[N_TIME_STEPS - 1, :])
