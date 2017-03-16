@@ -284,7 +284,8 @@ for t in range(t_end):
         
         ocean_cell_jperunitarea_postdiff_2d=np.full((N_LAT, N_LONG), np.nan)
         for j in range(0,len(toa_insol_2d[0])):  
-            for i in range(0,len(toa_insol_2d)):
+            for i in (0,len(toa_insol_2d)-1):
+                print(i)
                 if i==0: #TOP ROW
                     ocean_cell_jperunitarea_postdiff_2d[i,j]=(((ocean_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
                                 + ((ocean_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
@@ -295,10 +296,22 @@ for t in range(t_end):
                                 + ((ocean_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
                                 + ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]
 
-                else: #non bottom non top rows
-                    ocean_cell_jperunitarea_postdiff_2d[i,j]=(((ocean_cell_jperunitarea_postdiff_3d[i-1,j,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
-                                + ((ocean_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]+ocean_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
-                                + ocean_cell_jperunitarea_postdiff_3d[i,j,t+1]
+                                
+        ocean_cell_jperunitarea_postdiff_2d[1:N_LAT-1,0:N_LONG]=\
+        (((np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=0)[1:N_LAT-1,0:N_LONG] #roll down
+        -2*ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
+        +np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=0)[1:N_LAT-1,0:N_LONG])  #roll up
+        
+        *(DIFF_Y_CONST/(cell_dy_m_2d[1:N_LAT-1,0:N_LONG]**2)))
+
+         + ((np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=1)[1:N_LAT-1,0:N_LONG] #roll right
+         -2*ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
+         +np.roll(ocean_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=1)[1:N_LAT-1,0:N_LONG]) #roll left
+         
+         *(DIFF_X_CONST/(cell_dx_m_2d[1:N_LAT-1,0:N_LONG]**2))))*DELTA_SECS\
+        
+        + ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]
+                    
         ocean_cell_jperunitarea_postdiff_3d[:,:,t+1] = ocean_cell_jperunitarea_postdiff_2d #transfers back
         ocean_cell_j_postdiff_3d[:,:,t+1] = ocean_cell_jperunitarea_postdiff_3d[:,:,t+1]*ocean_cell_m2_2d #converting back from j/m^2 to j
         ocean_cell_deg_postdiff_3d[:,:,t+1] = (ocean_cell_j_postdiff_3d[:,:,t+1]/(4.186*ocean_cell_gr_2d))-273.15
@@ -313,7 +326,7 @@ for t in range(t_end):
        
         atmos_cell_jperunitarea_postdiff_2d=np.full((N_LAT, N_LONG), np.nan)
         for j in range(0,len(toa_insol_2d[0])):  
-            for i in range(0,len(toa_insol_2d)):
+            for i in (0,len(toa_insol_2d)-1):
                 if i==0: #TOP ROW
                     atmos_cell_jperunitarea_postdiff_2d[i,j]=(((atmos_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
                                 + ((atmos_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
@@ -323,11 +336,23 @@ for t in range(t_end):
                     atmos_cell_jperunitarea_postdiff_2d[i,j]=(((atmos_cell_jperunitarea_postdiff_3d[i-1,j,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,int(j+len(midcell_lat_2d[0])/2)%len(midcell_lat_2d[0]),t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
                                 + ((atmos_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
                                 + atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]
+                                
+                                
+        atmos_cell_jperunitarea_postdiff_2d[1:N_LAT-1,0:N_LONG]=\
+        (((np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=0)[1:N_LAT-1,0:N_LONG] #roll down
+        -2*atmos_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
+        +np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=0)[1:N_LAT-1,0:N_LONG])  #roll up
+        
+        *(DIFF_Y_CONST/(cell_dy_m_2d[1:N_LAT-1,0:N_LONG]**2)))
 
-                else: #non bottom non top rows
-                    atmos_cell_jperunitarea_postdiff_2d[i,j]=(((atmos_cell_jperunitarea_postdiff_3d[i-1,j,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i+1,j,t+1])*DIFF_Y_CONST)/(cell_dy_m_2d[i,j]**2)\
-                                + ((atmos_cell_jperunitarea_postdiff_3d[i,j-1,t+1]-2*atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]+atmos_cell_jperunitarea_postdiff_3d[i,(j+1)%len(midcell_lat_2d[0]),t+1])*DIFF_X_CONST)/(cell_dx_m_2d[i,j]**2))*DELTA_SECS\
-                                + atmos_cell_jperunitarea_postdiff_3d[i,j,t+1]
+         + ((np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],1,axis=1)[1:N_LAT-1,0:N_LONG] #roll right
+         -2*atmos_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]\
+         +np.roll(atmos_cell_jperunitarea_postdiff_3d[:,:,t+1],-1,axis=1)[1:N_LAT-1,0:N_LONG]) #roll left
+         
+         *(DIFF_X_CONST/(cell_dx_m_2d[1:N_LAT-1,0:N_LONG]**2))))*DELTA_SECS\
+        
+        + atmos_cell_jperunitarea_postdiff_3d[1:N_LAT-1,0:N_LONG,t+1]
+
         atmos_cell_jperunitarea_postdiff_3d[:,:,t+1] = atmos_cell_jperunitarea_postdiff_2d #transfers back
         atmos_cell_j_postdiff_3d[:,:,t+1] = atmos_cell_jperunitarea_postdiff_3d[:,:,t+1]*ocean_cell_m2_2d #converting back from j/m^2 to j
         atmos_cell_deg_postdiff_3d[:,:,t+1] = (atmos_cell_j_postdiff_3d[:,:,t+1]/(1004*atmos_cell_kg_2d))-273.15
@@ -498,3 +523,7 @@ plt.xlabel('Time')
 plt.show()
 show_plot() #this is your function mcp!
 plt.close(1)
+
+#AAA= np.array([[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]])
+##AAA=AAA[1:3,1:3]
+#AAAA=   np.roll(AAA,1,axis=1)[1:N_LAT-1,0:N_LONG]
