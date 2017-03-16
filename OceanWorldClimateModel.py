@@ -293,7 +293,7 @@ for t in range(N_TIME_STEPS):
         for j in range(N_LAT):
             wtf1 = int(j + N_LONG / 2) % N_LONG
             wtf2 = (j + 1) % N_LONG
-            # i = 0
+            # TOP (MOST EASTERLY) ROW (i = 0)
             _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, wtf1, t+1]
                         - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
                         + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
@@ -305,7 +305,7 @@ for t in range(N_TIME_STEPS):
             ocean_cell_jperunitarea_postdiff_2d[0, j] = ((_x_diff + _y_diff) * DELTA_SECS
                                                          + ocean_cell_jperunitarea_postdiff_3d[0, j, t+1])  # NOQA
 
-            # i = last - 1
+            # BOTTOM (MOST WESTERLY) ROW (i = last - 1)
             _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf1, t+1]
                         - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
                         + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
@@ -315,32 +315,26 @@ for t in range(N_TIME_STEPS):
                         + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf2, t+1])
                        * DIFF_X_CONST) / (cell_dx_m_2d[N_LAT-1, j]**2)
             ocean_cell_jperunitarea_postdiff_2d[N_LAT-1, j] = ((_x_diff + _y_diff) * DELTA_SECS
-                                                         + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1])  # NOQA
+                                                               + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1])  # NOQA
 
-        ocean_cell_jperunitarea_postdiff_2d[1:N_LAT-1, :N_LONG] =\
-        (((np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=0)[1:N_LAT - 1, 0:N_LONG]  # roll down
-        - 2 * ocean_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
-        + np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=0)[1:N_LAT - 1, 0:N_LONG])  # roll up
+        sub_arr = ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1, :, t+1]
+        _x_diff = ((np.roll(sub_arr, 1, axis=1)  # roll right
+                    - 2 * sub_arr
+                    + np.roll(sub_arr, -1, axis=1))  # roll left
+                   * DIFF_X_CONST / (cell_dx_m_2d[1:N_LAT - 1, :]**2))
+        _y_diff = ((np.roll(sub_arr, 1, axis=0)  # roll down
+                    - 2 * sub_arr
+                    + np.roll(sub_arr, -1, axis=0))  # roll up
+                   * DIFF_Y_CONST / (cell_dy_m_2d[1:N_LAT - 1, :]**2))
 
-        * (DIFF_Y_CONST / (cell_dy_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))
+        ocean_cell_jperunitarea_postdiff_2d[1:N_LAT-1, :] = ((_y_diff + _x_diff) * DELTA_SECS + sub_arr)  # NOQA
 
-         + ((np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=1)[1:N_LAT - 1, 0:N_LONG]  # roll right
-         - 2 * ocean_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
-         + np.roll(ocean_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=1)[1:N_LAT - 1, 0:N_LONG])  # roll left
+        ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] = ocean_cell_jperunitarea_postdiff_2d  # transfers back # FIXME
+        ocean_cell_j_postdiff_3d[:, :, t+1] = ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # converting back from j/m^2 to j
+        ocean_cell_deg_postdiff_3d[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t+1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0
 
-         * (DIFF_X_CONST / (cell_dx_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))) * DELTA_SECS\
-
-        + ocean_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]
-
-        ocean_cell_jperunitarea_postdiff_3d[
-            :, :, t + 1] = ocean_cell_jperunitarea_postdiff_2d  # transfers back
-        ocean_cell_j_postdiff_3d[:, :, t + 1] = ocean_cell_jperunitarea_postdiff_3d[
-            :, :, t + 1] * ocean_cell_m2_2d  # converting back from j/m^2 to j
-        ocean_cell_deg_postdiff_3d[:, :, t + 1] = (ocean_cell_j_postdiff_3d[
-                                                   :, :, t + 1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0
 
     if (opt2 == 2) or (opt2 == 3):
-
         ############################################ NOQA
         # phase 2b include diffusion in Atmosphere #
         ############################################ NOQA
