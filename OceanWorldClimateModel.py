@@ -375,12 +375,12 @@ for t in range(N_TIME_STEPS):
         plt.subplot(3, 2, 1)
         plt.text(0.05, 18.5, 'A', fontsize=12)
 
-        plt.pcolor(np.flipud(ocean_cell_deg_prediff_3d[:, :, t]), cmap='bwr')
+        plt.pcolor(np.flipud(ocean_cell_deg_prediff_3d[:, :, t]),
+                   cmap='bwr', vmin=-T0, vmax=T0)
         plt.xticks(np.arange(0, xticks.shape[0]), xticks)
         plt.yticks(np.arange(0, yticks.shape[0]), yticks)
         clb = plt.colorbar()
         clb.set_label('DegC', rotation=270)
-        plt.clim(-T0, T0)
         plt.title("No diffusion ocean-" + str(month_str) + "-" + str(t))
         plt.ylabel('Degrees Latitude')
 
@@ -388,38 +388,38 @@ for t in range(N_TIME_STEPS):
         plt.ylabel('Degrees Latitude')
         plt.text(0.05, 18.5, 'D', fontsize=12)
 
-        plt.pcolor(np.flipud(ocean_cell_deg_postdiff_3d[:, :, t]), cmap='bwr')
+        plt.pcolor(np.flipud(ocean_cell_deg_postdiff_3d[:, :, t]),
+                   cmap='bwr', vmin=-T0, vmax=T0)
         plt.xticks(np.arange(0, xticks.shape[0]), xticks)
         plt.yticks(np.arange(0, yticks.shape[0]), yticks)
-        plt.show()
+        # plt.show()
         clb = plt.colorbar()
         clb.set_label('DegC', rotation=270)
-        plt.clim(-T0, T0)
         plt.title("Diffusion ocean-" + str(month_str) + "-" + str(t))
 
         plt.subplot(3, 2, 3)
         plt.text(0.05, 18.5, 'B', fontsize=12)
         plt.ylabel('Degrees Latitude')
 
-        plt.pcolor(np.flipud(atmos_cell_deg_prediff_3d[:, :, t]), cmap='bwr')
+        plt.pcolor(np.flipud(atmos_cell_deg_prediff_3d[:, :, t]),
+                   cmap='bwr', vmin=-T0, vmax=T0)
         plt.xticks(np.arange(0, xticks.shape[0]), xticks)
         plt.yticks(np.arange(0, yticks.shape[0]), yticks)
         clb = plt.colorbar()
         clb.set_label('DegC', rotation=270)
-        plt.clim(-T0, T0)
         plt.title("No diffusion atmosphere-" + str(month_str) + "-" + str(t))
 
         plt.subplot(3, 2, 4)
         plt.ylabel('Degrees Latitude')
         plt.text(0.05, 18.5, 'E', fontsize=12)
 
-        plt.pcolor(np.flipud(atmos_cell_deg_postdiff_3d[:, :, t]), cmap='bwr')
+        plt.pcolor(np.flipud(atmos_cell_deg_postdiff_3d[:, :, t]),
+                   cmap='bwr', vmin=-T0, vmax=T0)
         plt.xticks(np.arange(0, xticks.shape[0]), xticks)
         plt.yticks(np.arange(0, yticks.shape[0]), yticks)
-        plt.show()
+        # plt.show()
         clb = plt.colorbar()
         clb.set_label('DegC', rotation=270)
-        plt.clim(-T0, T0)
         plt.title("Diffusion atmosphere-" + str(month_str) + "-" + str(t))
 
         plt.subplot(3, 2, 5)
@@ -443,7 +443,7 @@ for t in range(N_TIME_STEPS):
         plt.plot(atmos_cell_deg_prediff_latmean,
                  midcell_lat_y1, 'r', label='atmos')
         plt.legend(loc='upper right', prop={'size': 10})
-        plt.clim(-T0, T0)
+        # plt.clim(-T0, T0)
         plt.title("C No diffusion lat-temp-profile-" +
                   str(month_str) + "-" + str(t))
 
@@ -468,8 +468,8 @@ for t in range(N_TIME_STEPS):
         plt.plot(atmos_cell_deg_postdiff_latmean,
                  midcell_lat_y2, 'r', label='atmos')
         plt.legend(loc='upper right', prop={'size': 10})
-        plt.show()
-        plt.clim(-T0, T0)
+        # plt.show()
+        # plt.clim(-T0, T0)
         plt.title("F diffusion lat-temp-profile-" +
                   str(month_str) + "-" + str(t))
 
@@ -520,7 +520,7 @@ plt.plot(x, y8, 'r--', linewidth=1.0, label='atmosDIFF')
 plt.legend(loc='lower right', prop={'size': 14})
 plt.ylabel('Temperature (Degrees C)')
 plt.xlabel('Time')
-plt.show()
+# plt.show()
 show_plot()  # this is your function mcp!
 plt.close(1)
 
