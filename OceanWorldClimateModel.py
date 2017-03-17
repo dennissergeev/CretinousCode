@@ -32,6 +32,59 @@ def show_plot(figure_id=None):
     fig.canvas.manager.window.raise_()
 
 
+def calc_diffusion(arr, cell_dx, cell_dy, x_const, y_const, dt):
+    """
+    Calculate 2D diffusion using centred differences
+
+    Arguments
+    ---------
+    arr : numpy array of shape (M, N)
+        array to calculate diffusion
+    cell_dx, cell_dy : numpy arrays of shape (M, N)
+        arrays of area in m^2 to weigh the results
+    x_const, y_const: numpy arrays of shape (M, N) or scalar
+        diffusion coefficients
+    dt : scalar
+        time step in seconds
+
+    Returns
+    -------
+    numpy array of shape (M, N)
+    """
+    nlat, nlon = arr.shape
+    work = np.full((nlat, nlon), np.nan)
+    for j in range(nlon):
+        wtf1 = int(j + nlon / 2) % nlon
+        wtf2 = (j + 1) % nlon
+        # TOP ROW (i = 0)
+        _x_diff = ((arr[0, wtf1] - 2 * arr[0, j] + arr[1, j])
+                   * x_const) / (cell_dx[0, j] ** 2)
+        _y_diff = ((arr[0, j-1] - 2 * arr[0, j] + arr[0, wtf2])
+                   * y_const) / (cell_dy[0, j] ** 2)
+        work[0, j] = ((_x_diff + _y_diff) * dt + arr[0, j])
+
+        # BOTTOM ROW (i = last - 1)
+        _x_diff = ((arr[nlat-1, wtf1] - 2 * arr[nlat-1, j] + arr[1, j])
+                   * x_const) / (cell_dx[nlat-1, j] ** 2)
+        _y_diff = ((arr[nlat-1, j-1] - 2 * arr[nlat-1, j]
+                    + arr[nlat-1, wtf2])
+                   * y_const) / (cell_dy[nlat-1, j] ** 2)
+        work[nlat-1, j] = ((_x_diff + _y_diff) * dt + arr[nlat-1, j])
+
+    sub_arr = arr[1:nlat-1, :]
+    _x_diff = ((np.roll(sub_arr, 1, axis=1)  # roll right
+                - 2 * sub_arr
+                + np.roll(sub_arr, -1, axis=1))  # roll left
+               * x_const / (cell_dx[1:nlat - 1, :] ** 2))
+    _y_diff = ((np.roll(sub_arr, 1, axis=0)  # roll down
+                - 2 * sub_arr
+                + np.roll(sub_arr, -1, axis=0))  # roll up
+               * y_const / (cell_dy[1:nlat - 1, :] ** 2))
+
+    work[1:nlat-1, :] = ((_y_diff + _x_diff) * dt + sub_arr)
+    return work
+
+
 opt2 = 3
 # 1=Oceandiffusion only
 # 2=Atmsopherediffusion only
@@ -192,7 +245,6 @@ _get_sec = np.vectorize(lambda x: x.hour * 3600
 ######################### NOQA
 # MAIN TIME LOOP BEGINS #
 ######################### NOQA
-
 for t in range(N_TIME_STEPS):
     my_date_london = my_date_london + timedelta(hours=1)
     print(t, my_date_london)
@@ -288,94 +340,26 @@ for t in range(N_TIME_STEPS):
         ####################################### NOQA
         # phase 2a include diffusion in Ocean #
         ####################################### NOQA
+        ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] = calc_diffusion(ocean_cell_jperunitarea_postdiff_3d[:, :, t+1],  # NOQA
+                                                                        cell_dx_m_2d, cell_dy_m_2d,  # NOQA
+                                                                        DIFF_X_CONST, DIFF_Y_CONST,  # NOQA
+                                                                        DELTA_SECS)  # NOQA
 
-        ocean_cell_jperunitarea_postdiff_2d = np.full((N_LAT, N_LONG), np.nan)
-        for j in range(N_LONG):
-            wtf1 = int(j + N_LONG / 2) % N_LONG
-            wtf2 = (j + 1) % N_LONG
-            # TOP ROW (i = 0)
-            _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, wtf1, t+1]
-                        - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
-                        + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
-                       * DIFF_X_CONST) / (cell_dy_m_2d[0, j]**2)
-            _y_diff = ((ocean_cell_jperunitarea_postdiff_3d[0, j-1, t+1]
-                        - 2 * ocean_cell_jperunitarea_postdiff_3d[0, j, t+1]
-                        + ocean_cell_jperunitarea_postdiff_3d[0, wtf2, t+1])
-                       * DIFF_Y_CONST) / (cell_dx_m_2d[0, j]**2)
-            ocean_cell_jperunitarea_postdiff_2d[0, j] = ((_x_diff + _y_diff) * DELTA_SECS
-                                                         + ocean_cell_jperunitarea_postdiff_3d[0, j, t+1])  # NOQA
-
-            # BOTTOM ROW (i = last - 1)
-            _x_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf1, t+1]
-                        - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
-                        + ocean_cell_jperunitarea_postdiff_3d[1, j, t+1])
-                       * DIFF_X_CONST) / (cell_dy_m_2d[N_LAT-1, j]**2)
-            _y_diff = ((ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j-1, t+1]
-                        - 2 * ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1]
-                        + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, wtf2, t+1])
-                       * DIFF_Y_CONST) / (cell_dx_m_2d[N_LAT-1, j]**2)
-            ocean_cell_jperunitarea_postdiff_2d[N_LAT-1, j] = ((_x_diff + _y_diff) * DELTA_SECS
-                                                               + ocean_cell_jperunitarea_postdiff_3d[N_LAT-1, j, t+1])  # NOQA
-
-        sub_arr = ocean_cell_jperunitarea_postdiff_3d[1:N_LAT-1, :, t+1]
-        _x_diff = ((np.roll(sub_arr, 1, axis=1)  # roll right
-                    - 2 * sub_arr
-                    + np.roll(sub_arr, -1, axis=1))  # roll left
-                   * DIFF_X_CONST / (cell_dx_m_2d[1:N_LAT - 1, :]**2))
-        _y_diff = ((np.roll(sub_arr, 1, axis=0)  # roll down
-                    - 2 * sub_arr
-                    + np.roll(sub_arr, -1, axis=0))  # roll up
-                   * DIFF_Y_CONST / (cell_dy_m_2d[1:N_LAT - 1, :]**2))
-
-        ocean_cell_jperunitarea_postdiff_2d[1:N_LAT-1, :] = ((_y_diff + _x_diff) * DELTA_SECS + sub_arr)  # NOQA
-
-        ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] = ocean_cell_jperunitarea_postdiff_2d  # transfers back # FIXME
-        ocean_cell_j_postdiff_3d[:, :, t+1] = ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # converting back from j/m^2 to j
-        ocean_cell_deg_postdiff_3d[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t+1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0
-
+        ocean_cell_j_postdiff_3d[:, :, t+1] = ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # converting back from j/m^2 to j  # NOQA
+        ocean_cell_deg_postdiff_3d[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t+1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0  # NOQA
 
     if (opt2 == 2) or (opt2 == 3):
         ############################################ NOQA
         # phase 2b include diffusion in Atmosphere #
         ############################################ NOQA
+        atmos_cell_jperunitarea_postdiff_3d[:, :, t+1] = calc_diffusion(atmos_cell_jperunitarea_postdiff_3d[:, :, t+1],  # NOQA
+                                                                        cell_dx_m_2d, cell_dy_m_2d,  # NOQA
+                                                                        DIFF_X_CONST, DIFF_Y_CONST,  # NOQA
+                                                                        DELTA_SECS)  # NOQA
+        atmos_cell_j_postdiff_3d[:, :, t+1] = atmos_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # converting back from j/m^2 to j  # NOQA
+        atmos_cell_deg_postdiff_3d[:, :, t+1] = (atmos_cell_j_postdiff_3d[:, :, t+1] / (AIR_HEAT_CAPAC * atmos_cell_kg_2d)) - T0  # NOQA
 
-        atmos_cell_jperunitarea_postdiff_2d = np.full((N_LAT, N_LONG), np.nan)
-        for j in range(toa_insol_2d.shape[1]):
-            for i in (0, len(toa_insol_2d) - 1):
-                if i == 0:  # TOP ROW
-                    atmos_cell_jperunitarea_postdiff_2d[i, j] = (((atmos_cell_jperunitarea_postdiff_3d[i, int(j + len(midcell_lat_2d[0]) / 2) % len(midcell_lat_2d[0]), t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i + 1, j, t + 1]) * DIFF_Y_CONST) / (cell_dy_m_2d[i, j]**2)
-                                + ((atmos_cell_jperunitarea_postdiff_3d[i, j - 1, t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i, (j + 1) % len(midcell_lat_2d[0]), t + 1]) * DIFF_X_CONST) / (cell_dx_m_2d[i, j]**2)) * DELTA_SECS\
-                                + atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1]
-
-                elif i == len(midcell_lat_2d) - 1:  # BOTTOM ROW
-                    atmos_cell_jperunitarea_postdiff_2d[i, j] = (((atmos_cell_jperunitarea_postdiff_3d[i - 1, j, t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i, int(j + len(midcell_lat_2d[0]) / 2) % len(midcell_lat_2d[0]), t + 1]) * DIFF_Y_CONST) / (cell_dy_m_2d[i, j]**2)
-                                + ((atmos_cell_jperunitarea_postdiff_3d[i, j - 1, t + 1] - 2 * atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1] + atmos_cell_jperunitarea_postdiff_3d[i, (j + 1) % len(midcell_lat_2d[0]), t + 1]) * DIFF_X_CONST) / (cell_dx_m_2d[i, j]**2)) * DELTA_SECS\
-                                + atmos_cell_jperunitarea_postdiff_3d[i, j, t + 1]
-
-        atmos_cell_jperunitarea_postdiff_2d[1:N_LAT - 1, 0:N_LONG] =\
-        (((np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=0)[1:N_LAT - 1, 0:N_LONG]  # roll down
-        - 2 * atmos_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
-        + np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=0)[1:N_LAT - 1, 0:N_LONG])  # roll up
-
-        * (DIFF_Y_CONST / (cell_dy_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))
-
-         + ((np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], 1, axis=1)[1:N_LAT - 1, 0:N_LONG]  # roll right
-         - 2 * atmos_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]\
-         + np.roll(atmos_cell_jperunitarea_postdiff_3d[:, :, t + 1], -1, axis=1)[1:N_LAT - 1, 0:N_LONG])  # roll left
-
-         * (DIFF_X_CONST / (cell_dx_m_2d[1:N_LAT - 1, 0:N_LONG]**2)))) * DELTA_SECS\
-
-        + atmos_cell_jperunitarea_postdiff_3d[1:N_LAT - 1, 0:N_LONG, t + 1]
-
-        atmos_cell_jperunitarea_postdiff_3d[
-            :, :, t + 1] = atmos_cell_jperunitarea_postdiff_2d  # transfers back
-        atmos_cell_j_postdiff_3d[:, :, t + 1] = atmos_cell_jperunitarea_postdiff_3d[
-            :, :, t + 1] * ocean_cell_m2_2d  # converting back from j/m^2 to j
-        atmos_cell_deg_postdiff_3d[
-            :, :, t + 1] = (atmos_cell_j_postdiff_3d[:, :, t + 1] / (AIR_HEAT_CAPAC * atmos_cell_kg_2d)) - T0
-
-
-##### end #####
+    # END OF CALCULATIONS
 
     if t % (24 * 30) == 0:
         month = month + 1
@@ -447,8 +431,11 @@ for t in range(N_TIME_STEPS):
         atmos_cell_deg_prediff_latmean = atmos_cell_deg_prediff_3d[:, :, t]
         atmos_cell_deg_prediff_latmean = np.mean(
             atmos_cell_deg_prediff_latmean, axis=1)
-        midcell_lat_y1 = np.arange(midcell_lat_2d[-1, 0], midcell_lat_2d[0, 0] + (
-            midcell_lat_2d[0, 0] - midcell_lat_2d[1, 0]), 180 / midcell_lat_2d.shape[0])
+        midcell_lat_y1 = np.arange(midcell_lat_2d[-1, 0],
+                                   midcell_lat_2d[0, 0]
+                                   + midcell_lat_2d[0, 0]
+                                   - midcell_lat_2d[1, 0],
+                                   180 / midcell_lat_2d.shape[0])
         midcell_lat_y1 = np.flipud(midcell_lat_y1)
         plt.plot(ocean_cell_deg_prediff_latmean,
                  midcell_lat_y1, 'b', label='ocean')
@@ -469,8 +456,11 @@ for t in range(N_TIME_STEPS):
         atmos_cell_deg_postdiff_latmean = atmos_cell_deg_postdiff_3d[:, :, t]
         atmos_cell_deg_postdiff_latmean = np.mean(
             atmos_cell_deg_postdiff_latmean, axis=1)
-        midcell_lat_y2 = np.arange(midcell_lat_2d[-1, 0], midcell_lat_2d[0, 0] + (
-            midcell_lat_2d[0, 0] - midcell_lat_2d[1, 0]), 180 / midcell_lat_2d.shape[0])
+        midcell_lat_y2 = np.arange(midcell_lat_2d[-1, 0],
+                                   midcell_lat_2d[0, 0]
+                                   + midcell_lat_2d[0, 0]
+                                   - midcell_lat_2d[1, 0],
+                                   180 / midcell_lat_2d.shape[0])
         midcell_lat_y2 = np.flipud(midcell_lat_y2)
         plt.plot(ocean_cell_deg_postdiff_latmean,
                  midcell_lat_y2, 'b', label='ocean')
@@ -486,7 +476,8 @@ for t in range(N_TIME_STEPS):
         show_plot()
 
 
-tseries_oa_mean_temp_area_weighted = np.full((ocean_cell_j_prediff_3d.shape[2], 4),
+tseries_oa_mean_temp_area_weighted = np.full(((ocean_cell_j_prediff_3d
+                                               .shape[2]), 4),
                                              np.nan)
 _arrs = (ocean_cell_deg_prediff_3d,
          ocean_cell_deg_postdiff_3d,
@@ -495,7 +486,7 @@ _arrs = (ocean_cell_deg_prediff_3d,
 for i, arr in enumerate(_arrs):
     mean_arr = arr.mean(axis=1)
     mean_arr *= lat_band_area_prop[:, np.newaxis]
-    tseries_oa_mean_temp_area_weighted[:, i] = mean_arr.sum(axis = 0)
+    tseries_oa_mean_temp_area_weighted[:, i] = mean_arr.sum(axis=0)
 
 y1 = ocean_cell_deg_prediff_3d.mean(axis=(0, 1))  # ocean temp without diff
 y2 = ocean_cell_deg_postdiff_3d.mean(axis=(0, 1))  # ocean temp + DIFF
