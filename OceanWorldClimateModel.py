@@ -32,7 +32,7 @@ def show_plot(figure_id=None):
     fig.canvas.manager.window.raise_()
 
 
-def calc_diffusion(arr, cell_dx, cell_dy, x_const, y_const, dt):
+def calc_diffusion(arr, dx, dy, x_const, y_const, dt):
     """
     Calculate 2D diffusion using centred differences
 
@@ -40,8 +40,8 @@ def calc_diffusion(arr, cell_dx, cell_dy, x_const, y_const, dt):
     ---------
     arr : numpy array of shape (M, N)
         array to calculate diffusion
-    cell_dx, cell_dy : numpy arrays of shape (M, N)
-        arrays of area in m^2 to weigh the results
+    dx, dy : numpy arrays of shape (M, N)
+        grid spacing
     x_const, y_const: numpy arrays of shape (M, N) or scalar
         diffusion coefficients
     dt : scalar
@@ -58,28 +58,28 @@ def calc_diffusion(arr, cell_dx, cell_dy, x_const, y_const, dt):
         wtf2 = (j + 1) % nlon
         # TOP ROW (i = 0)
         _x_diff = ((arr[0, wtf1] - 2 * arr[0, j] + arr[1, j])
-                   * x_const) / (cell_dx[0, j] ** 2)
+                   * x_const) / (dx[0, j] ** 2)
         _y_diff = ((arr[0, j-1] - 2 * arr[0, j] + arr[0, wtf2])
-                   * y_const) / (cell_dy[0, j] ** 2)
+                   * y_const) / (dy[0, j] ** 2)
         work[0, j] = ((_x_diff + _y_diff) * dt + arr[0, j])
 
         # BOTTOM ROW (i = last - 1)
         _x_diff = ((arr[nlat-1, wtf1] - 2 * arr[nlat-1, j] + arr[1, j])
-                   * x_const) / (cell_dx[nlat-1, j] ** 2)
+                   * x_const) / (dx[nlat-1, j] ** 2)
         _y_diff = ((arr[nlat-1, j-1] - 2 * arr[nlat-1, j]
                     + arr[nlat-1, wtf2])
-                   * y_const) / (cell_dy[nlat-1, j] ** 2)
+                   * y_const) / (dy[nlat-1, j] ** 2)
         work[nlat-1, j] = ((_x_diff + _y_diff) * dt + arr[nlat-1, j])
 
     sub_arr = arr[1:nlat-1, :]
     _x_diff = ((np.roll(sub_arr, 1, axis=1)  # roll right
                 - 2 * sub_arr
                 + np.roll(sub_arr, -1, axis=1))  # roll left
-               * x_const / (cell_dx[1:nlat - 1, :] ** 2))
+               * x_const / (dx[1:nlat - 1, :] ** 2))
     _y_diff = ((np.roll(sub_arr, 1, axis=0)  # roll down
                 - 2 * sub_arr
                 + np.roll(sub_arr, -1, axis=0))  # roll up
-               * y_const / (cell_dy[1:nlat - 1, :] ** 2))
+               * y_const / (dy[1:nlat - 1, :] ** 2))
 
     work[1:nlat-1, :] = ((_y_diff + _x_diff) * dt + sub_arr)
     return work
@@ -356,7 +356,8 @@ for t in range(N_TIME_STEPS):
                                                                         cell_dx_m_2d, cell_dy_m_2d,  # NOQA
                                                                         DIFF_X_CONST, DIFF_Y_CONST,  # NOQA
                                                                         DELTA_SECS)  # NOQA
-        atmos_cell_j_postdiff_3d[:, :, t+1] = atmos_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # converting back from j/m^2 to j  # NOQA
+        # converting back from j/m^2 to j
+        atmos_cell_j_postdiff_3d[:, :, t+1] = atmos_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # NOQA
         atmos_cell_deg_postdiff_3d[:, :, t+1] = (atmos_cell_j_postdiff_3d[:, :, t+1] / (AIR_HEAT_CAPAC * atmos_cell_kg_2d)) - T0  # NOQA
 
     # END OF CALCULATIONS
