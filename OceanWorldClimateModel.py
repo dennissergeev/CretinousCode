@@ -10,26 +10,27 @@ try:
     get_ipython().magic('reset -f')  # NOQA
 except:
     pass
-# sys.path.append('PythFunctions')
 from datetime import datetime, timedelta
-import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid.anchored_artists import AnchoredText
+import numpy as np
+from string import ascii_lowercase
+# sys.path.append('PythFunctions')
 # from Function import show_plot
 plt.close("all")
 
 
-def show_plot(figure_id=None):
-    import matplotlib.pyplot as plt
-    if figure_id is None:
-        fig = plt.gcf()
-    else:
-        # do this even if figure_id == 0
-        fig = plt.figure(num=figure_id)
-
-    plt.show()
-    plt.pause(1e-9)
-    fig.canvas.manager.window.activateWindow()
-    fig.canvas.manager.window.raise_()
+# def show_plot(figure_id=None):
+#     if figure_id is None:
+#         fig = plt.gcf()
+#     else:
+#         # do this even if figure_id == 0
+#         fig = plt.figure(num=figure_id)
+#
+#     plt.show()
+#     plt.pause(1e-9)
+#     fig.canvas.manager.window.activateWindow()
+#     fig.canvas.manager.window.raise_()
 
 
 def calc_diffusion(arr, dx, dy, x_const, y_const, dt):
@@ -115,14 +116,16 @@ MONTH_LIST = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 # maxNH %92days.*24
 
+# Visualisation settings
+PLOT_PROGRESS = True
+pcol_kw = dict(cmap='bwr', vmin=-T0, vmax=T0)
+
 # ********************** END OF INITIAL CONDITIONS INPUT **********************
 earth_hemisph_area = 2 * np.pi * EARTH_RAD_M ** 2
 earth_area = 4 * np.pi * EARTH_RAD_M ** 2
 lat_res_deg = 180 / N_LAT
 long_res_deg = 360 / N_LONG
-month = START_MONTH
-month_str = MONTH_LIST[month - 1]
-my_date_london = datetime(2001, START_MONTH, 21, 12, 0, 0)
+my_date_london_init = datetime(2001, START_MONTH, 21, 12, 0, 0)
 
 xticks = np.arange(-180, 181, long_res_deg)
 yticks = np.arange(-90, 91, lat_res_deg)
@@ -205,10 +208,10 @@ ocean_cell_j_postdiff_3d[:, :, 0] = ocean_cell_init_j_2d
 oce_temp_ini = (ocean_cell_init_j_2d
                 / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0
 
-ocean_cell_deg_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
-ocean_cell_deg_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
-ocean_cell_deg_prediff_3d[:, :, 0] = oce_temp_ini  # evolving temp (degC)
-ocean_cell_deg_postdiff_3d[:, :, 0] = oce_temp_ini  # evolving temp (degC)
+oce_cell_deg_prediff = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+oce_cell_deg_postdiff = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+oce_cell_deg_prediff[:, :, 0] = oce_temp_ini  # evolving temp (degC)
+oce_cell_deg_postdiff[:, :, 0] = oce_temp_ini  # evolving temp (degC)
 
 atmos_cell_init_j_2d = (ATMOS_INIT_TEMP + T0) * \
                         AIR_HEAT_CAPAC * atmos_cell_kg_2d
@@ -226,10 +229,10 @@ atmos_cell_init_deg_2d = (atmos_cell_init_j_2d /
                           (atmos_cell_kg_2d * AIR_HEAT_CAPAC) - T0)
 
 
-atmos_cell_deg_prediff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
-atmos_cell_deg_postdiff_3d = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
-atmos_cell_deg_prediff_3d[:, :, 0] = atmos_cell_init_deg_2d
-atmos_cell_deg_postdiff_3d[:, :, 0] = atmos_cell_init_deg_2d
+atm_cell_deg_prediff = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+atm_cell_deg_postdiff = np.full((N_LAT, N_LONG, N_TIME_STEPS + 1), np.nan)
+atm_cell_deg_prediff[:, :, 0] = atmos_cell_init_deg_2d
+atm_cell_deg_postdiff[:, :, 0] = atmos_cell_init_deg_2d
 
 # to get the average SI across the planet
 tseries_mean_toa_insol = np.full((N_TIME_STEPS, 1), np.nan)
@@ -242,9 +245,34 @@ _get_sec = np.vectorize(lambda x: x.hour * 3600
                         + x.minute * 60
                         + x.second - 12 * 3600)
 
+if PLOT_PROGRESS:
+    # Prepare subplots
+    fig, axs = plt.subplots(nrows=3, ncols=2,
+                            num='main plot', figsize=(15, 10))
+
+    # Handles
+    hs = [None] * 8
+    # Colorbars
+    cbs = [None] * 4
+
+    # Label axes
+    for letter, ax in zip(ascii_lowercase, axs.flatten()):
+        at = AnchoredText(letter, prop=dict(size=12), frameon=True, loc=2)
+        at.patch.set_boxstyle('round', pad=0., rounding_size=0.2)
+        ax.add_artist(at)
+
+        ax.set_ylabel('Degrees Latitude')
+
+    # Stuff for line plots
+    midlat = midcell_lat_2d[:, 0]
+    oce_kw = dict(color='b', label='ocean')
+    atm_kw = dict(color='r', label='atmos')
+
+
 ######################### NOQA
 # MAIN TIME LOOP BEGINS #
 ######################### NOQA
+my_date_london = my_date_london_init
 for t in range(N_TIME_STEPS):
     my_date_london = my_date_london + timedelta(hours=1)
     print(t, my_date_london)
@@ -299,10 +327,10 @@ for t in range(N_TIME_STEPS):
     space2_ocean_flux = alb_insol_2d * (ocean_cell_m2_2d)
 
     atmos2_ocean_flux = (ocean_cell_m2_2d * STEF_BOLTZ_CONST * ATM_ABSORP_COEF
-                         * (atmos_cell_deg_prediff_3d[:, :, t] + T0) ** 4
+                         * (atm_cell_deg_prediff[:, :, t] + T0) ** 4
                          * 0.5)
     surf_radiation = (ocean_cell_m2_2d * STEF_BOLTZ_CONST
-                      * (ocean_cell_deg_prediff_3d[:, :, t] + T0) ** 4)
+                      * (oce_cell_deg_prediff[:, :, t] + T0) ** 4)
     ocean2_atmos_flux = surf_radiation * ATM_ABSORP_COEF
     ocean2_space_flux = surf_radiation * (1 - ATM_ABSORP_COEF)
     atmos2_space_flux = atmos2_ocean_flux
@@ -312,13 +340,13 @@ for t in range(N_TIME_STEPS):
                                           + atmos2_ocean_flux * DELTA_SECS
                                           - ocean2_space_flux * DELTA_SECS
                                           - ocean2_atmos_flux * DELTA_SECS)
-    ocean_cell_deg_prediff_3d[:, :, t+1] = (ocean_cell_j_prediff_3d[:, :, t]
+    oce_cell_deg_prediff[:, :, t+1] = (ocean_cell_j_prediff_3d[:, :, t]
                                               / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0  # NOQA
     atmos_cell_j_prediff_3d[:, :, t+1] = (atmos_cell_j_prediff_3d[:, :, t]
                                           + ocean2_atmos_flux * DELTA_SECS
                                           - atmos2_ocean_flux * DELTA_SECS
                                           - atmos2_space_flux * DELTA_SECS)
-    atmos_cell_deg_prediff_3d[:, :, t+1] = atmos_cell_j_prediff_3d[:, :, t] / (atmos_cell_kg_2d * AIR_HEAT_CAPAC) - T0  # NOQA
+    atm_cell_deg_prediff[:, :, t+1] = atmos_cell_j_prediff_3d[:, :, t] / (atmos_cell_kg_2d * AIR_HEAT_CAPAC) - T0  # NOQA
 
     ocean_cell_j_postdiff_3d[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t]
                                            + space2_ocean_flux * DELTA_SECS
@@ -346,7 +374,7 @@ for t in range(N_TIME_STEPS):
                                                                         DELTA_SECS)  # NOQA
 
         ocean_cell_j_postdiff_3d[:, :, t+1] = ocean_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # converting back from j/m^2 to j  # NOQA
-        ocean_cell_deg_postdiff_3d[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t+1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0  # NOQA
+        oce_cell_deg_postdiff[:, :, t+1] = (ocean_cell_j_postdiff_3d[:, :, t+1] / (WATER_HEAT_CAPAC * ocean_cell_gr_2d)) - T0  # NOQA
 
     if (opt2 == 2) or (opt2 == 3):
         ############################################ NOQA
@@ -358,141 +386,125 @@ for t in range(N_TIME_STEPS):
                                                                         DELTA_SECS)  # NOQA
         # converting back from j/m^2 to j
         atmos_cell_j_postdiff_3d[:, :, t+1] = atmos_cell_jperunitarea_postdiff_3d[:, :, t+1] * ocean_cell_m2_2d  # NOQA
-        atmos_cell_deg_postdiff_3d[:, :, t+1] = (atmos_cell_j_postdiff_3d[:, :, t+1] / (AIR_HEAT_CAPAC * atmos_cell_kg_2d)) - T0  # NOQA
+        atm_cell_deg_postdiff[:, :, t+1] = (atmos_cell_j_postdiff_3d[:, :, t+1] / (AIR_HEAT_CAPAC * atmos_cell_kg_2d)) - T0  # NOQA
 
     # END OF CALCULATIONS
 
-    if t % (24 * 30) == 0:
-        month = month + 1
-        if month > 12:
-            month = month % 12
+    if (my_date_london.day == my_date_london_init.day
+       and my_date_london.hour == 0 and PLOT_PROGRESS):
+        # Show progress every month
+        # t % (24 * 30) == 0
+        month_str = MONTH_LIST[my_date_london.month - 1]
+        ttl_time = '-{}-{}'.format(month_str, t)
 
-        plt.clf()
+        # 2D fields
+        # TODO: wrap it up in a loop
+        arr = np.flipud(oce_cell_deg_prediff[:, :, t])
+        if hs[0] is None:
+            hs[0] = axs[0, 0].pcolormesh(arr, **pcol_kw)
+        else:
+            hs[0].set_array(arr.ravel())
+            axs[0, 0].set_xticks(np.arange(xticks.shape[0]))
+            axs[0, 0].set_yticks(np.arange(yticks.shape[0]))
+            axs[0, 0].set_xticklabels(xticks)
+            axs[0, 0].set_yticklabels(yticks)
+            cbs[0].remove()
+        cbs[0] = fig.colorbar(hs[0], ax=axs[0, 0])
+        cbs[0].set_label('DegC', rotation=270)
+        axs[0, 0].set_title('No diffusion ocean' + ttl_time)
 
-        month_str = (MONTH_LIST[month - 1])
+        arr = np.flipud(oce_cell_deg_postdiff[:, :, t])
+        if hs[1] is None:
+            hs[1] = axs[0, 1].pcolormesh(arr, **pcol_kw)
+        else:
+            hs[1].set_array(arr.ravel())
+            axs[0, 1].set_xticks(np.arange(xticks.shape[0]))
+            axs[0, 1].set_yticks(np.arange(yticks.shape[0]))
+            axs[0, 1].set_xticklabels(xticks)
+            axs[0, 1].set_yticklabels(yticks)
+            cbs[1].remove()
+        cbs[1] = fig.colorbar(hs[1], ax=axs[0, 1])
+        cbs[1].set_label('DegC', rotation=270)
+        axs[0, 1].set_title('Diffusion ocean' + ttl_time)
 
-        plt.figure(10, figsize=(15, 10))
-        plt.subplot(3, 2, 1)
-        plt.text(0.05, 18.5, 'A', fontsize=12)
+        arr = np.flipud(atm_cell_deg_prediff[:, :, t])
+        if hs[2] is None:
+            hs[2] = axs[1, 0].pcolormesh(arr, **pcol_kw)
+        else:
+            hs[2].set_array(arr.ravel())
+            axs[1, 0].set_xticks(np.arange(xticks.shape[0]))
+            axs[1, 0].set_yticks(np.arange(yticks.shape[0]))
+            axs[1, 0].set_xticklabels(xticks)
+            axs[1, 0].set_yticklabels(yticks)
+            cbs[2].remove()
+        cbs[2] = fig.colorbar(hs[2], ax=axs[1, 0])
+        cbs[2].set_label('DegC', rotation=270)
+        axs[1, 0].set_title('No diffusion atmosphere' + ttl_time)
 
-        plt.pcolor(np.flipud(ocean_cell_deg_prediff_3d[:, :, t]),
-                   cmap='bwr', vmin=-T0, vmax=T0)
-        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
-        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
-        clb = plt.colorbar()
-        clb.set_label('DegC', rotation=270)
-        plt.title("No diffusion ocean-" + str(month_str) + "-" + str(t))
-        plt.ylabel('Degrees Latitude')
+        arr = np.flipud(atm_cell_deg_postdiff[:, :, t])
+        if hs[3] is None:
+            hs[3] = axs[1, 1].pcolormesh(arr, **pcol_kw)
+        else:
+            hs[3].set_array(arr.ravel())
+            axs[1, 1].set_xticks(np.arange(xticks.shape[0]))
+            axs[1, 1].set_yticks(np.arange(yticks.shape[0]))
+            axs[1, 1].set_xticklabels(xticks)
+            axs[1, 1].set_yticklabels(yticks)
+            cbs[3].remove()
+        cbs[3] = fig.colorbar(hs[3], ax=axs[1, 1])
+        cbs[3].set_label('DegC', rotation=270)
+        axs[1, 1].set_title('Diffusion atmosphere' + ttl_time)
 
-        plt.subplot(3, 2, 2)
-        plt.ylabel('Degrees Latitude')
-        plt.text(0.05, 18.5, 'D', fontsize=12)
+        # Line plots
+        oce_prediff_latmean = oce_cell_deg_prediff[:, :, t].mean(axis=1)
+        atm_prediff_latmean = atm_cell_deg_prediff[:, :, t].mean(axis=1)
+        # midcell_lat_y1 = np.flipud(midcell_lat_y1)
+        if hs[4] is None and hs[5] is None:
+            hs[4], = axs[2, 0].plot(oce_prediff_latmean, midlat, **oce_kw)
+            hs[5], = axs[2, 0].plot(atm_prediff_latmean, midlat, **atm_kw)
+            axs[2, 0].legend(loc='upper right', prop={'size': 10})
+            axs[2, 0].set_title('No diffusion lat-temp-profile' + ttl_time)
+        else:
+            hs[4].set_data(oce_prediff_latmean, midlat)
+            hs[5].set_data(atm_prediff_latmean, midlat)
+        axs[2, 0].set_xlim([-T0, T0])
+        axs[2, 0].set_xlabel('DegC')
 
-        plt.pcolor(np.flipud(ocean_cell_deg_postdiff_3d[:, :, t]),
-                   cmap='bwr', vmin=-T0, vmax=T0)
-        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
-        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
-        # plt.show()
-        clb = plt.colorbar()
-        clb.set_label('DegC', rotation=270)
-        plt.title("Diffusion ocean-" + str(month_str) + "-" + str(t))
+        oce_prediff_latmean = oce_cell_deg_postdiff[:, :, t].mean(axis=1)
+        atm_prediff_latmean = atm_cell_deg_postdiff[:, :, t].mean(axis=1)
+        # midcell_lat_y1 = np.flipud(midcell_lat_y1)
+        if hs[6] is None and hs[7] is None:
+            hs[6], = axs[2, 1].plot(oce_prediff_latmean, midlat, **oce_kw)
+            hs[7], = axs[2, 1].plot(atm_prediff_latmean, midlat, **atm_kw)
+            axs[2, 1].legend(loc='upper right', prop={'size': 10})
+            axs[2, 1].set_title('Diffusion lat-temp-profile' + ttl_time)
+        else:
+            hs[6].set_data(oce_prediff_latmean, midlat)
+            hs[7].set_data(atm_prediff_latmean, midlat)
+        axs[2, 1].set_xlim([-T0, T0])
+        axs[2, 1].set_xlabel('DegC')
 
-        plt.subplot(3, 2, 3)
-        plt.text(0.05, 18.5, 'B', fontsize=12)
-        plt.ylabel('Degrees Latitude')
-
-        plt.pcolor(np.flipud(atmos_cell_deg_prediff_3d[:, :, t]),
-                   cmap='bwr', vmin=-T0, vmax=T0)
-        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
-        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
-        clb = plt.colorbar()
-        clb.set_label('DegC', rotation=270)
-        plt.title("No diffusion atmosphere-" + str(month_str) + "-" + str(t))
-
-        plt.subplot(3, 2, 4)
-        plt.ylabel('Degrees Latitude')
-        plt.text(0.05, 18.5, 'E', fontsize=12)
-
-        plt.pcolor(np.flipud(atmos_cell_deg_postdiff_3d[:, :, t]),
-                   cmap='bwr', vmin=-T0, vmax=T0)
-        plt.xticks(np.arange(0, xticks.shape[0]), xticks)
-        plt.yticks(np.arange(0, yticks.shape[0]), yticks)
-        # plt.show()
-        clb = plt.colorbar()
-        clb.set_label('DegC', rotation=270)
-        plt.title("Diffusion atmosphere-" + str(month_str) + "-" + str(t))
-
-        plt.subplot(3, 2, 5)
-        plt.ylabel('Degrees Latitude')
-        plt.xlabel('Temperature (Degrees C)')
-
-        ocean_cell_deg_prediff_latmean = ocean_cell_deg_prediff_3d[:, :, t]
-        ocean_cell_deg_prediff_latmean = np.mean(
-            ocean_cell_deg_prediff_latmean, axis=1)
-        atmos_cell_deg_prediff_latmean = atmos_cell_deg_prediff_3d[:, :, t]
-        atmos_cell_deg_prediff_latmean = np.mean(
-            atmos_cell_deg_prediff_latmean, axis=1)
-        midcell_lat_y1 = np.arange(midcell_lat_2d[-1, 0],
-                                   midcell_lat_2d[0, 0]
-                                   + midcell_lat_2d[0, 0]
-                                   - midcell_lat_2d[1, 0],
-                                   180 / midcell_lat_2d.shape[0])
-        midcell_lat_y1 = np.flipud(midcell_lat_y1)
-        plt.plot(ocean_cell_deg_prediff_latmean,
-                 midcell_lat_y1, 'b', label='ocean')
-        plt.plot(atmos_cell_deg_prediff_latmean,
-                 midcell_lat_y1, 'r', label='atmos')
-        plt.legend(loc='upper right', prop={'size': 10})
-        # plt.clim(-T0, T0)
-        plt.title("C No diffusion lat-temp-profile-" +
-                  str(month_str) + "-" + str(t))
-
-        plt.subplot(3, 2, 6)
-        plt.ylabel('Degrees Latitude')
-        plt.xlabel('Degrees C')
-
-        ocean_cell_deg_postdiff_latmean = ocean_cell_deg_postdiff_3d[:, :, t]
-        ocean_cell_deg_postdiff_latmean = np.mean(
-            ocean_cell_deg_postdiff_latmean, axis=1)
-        atmos_cell_deg_postdiff_latmean = atmos_cell_deg_postdiff_3d[:, :, t]
-        atmos_cell_deg_postdiff_latmean = np.mean(
-            atmos_cell_deg_postdiff_latmean, axis=1)
-        midcell_lat_y2 = np.arange(midcell_lat_2d[-1, 0],
-                                   midcell_lat_2d[0, 0]
-                                   + midcell_lat_2d[0, 0]
-                                   - midcell_lat_2d[1, 0],
-                                   180 / midcell_lat_2d.shape[0])
-        midcell_lat_y2 = np.flipud(midcell_lat_y2)
-        plt.plot(ocean_cell_deg_postdiff_latmean,
-                 midcell_lat_y2, 'b', label='ocean')
-        plt.plot(atmos_cell_deg_postdiff_latmean,
-                 midcell_lat_y2, 'r', label='atmos')
-        plt.legend(loc='upper right', prop={'size': 10})
-        # plt.show()
-        # plt.clim(-T0, T0)
-        plt.title("F diffusion lat-temp-profile-" +
-                  str(month_str) + "-" + str(t))
-
+        fig.subplots_adjust(hspace=0.33)
         plt.pause(0.1)
-        show_plot()
+        # show_plot()
 
 
 tseries_oa_mean_temp_area_weighted = np.full(((ocean_cell_j_prediff_3d
                                                .shape[2]), 4),
                                              np.nan)
-_arrs = (ocean_cell_deg_prediff_3d,
-         ocean_cell_deg_postdiff_3d,
-         atmos_cell_deg_prediff_3d,
-         atmos_cell_deg_postdiff_3d)
+_arrs = (oce_cell_deg_prediff,
+         oce_cell_deg_postdiff,
+         atm_cell_deg_prediff,
+         atm_cell_deg_postdiff)
 for i, arr in enumerate(_arrs):
     mean_arr = arr.mean(axis=1)
     mean_arr *= lat_band_area_prop[:, np.newaxis]
     tseries_oa_mean_temp_area_weighted[:, i] = mean_arr.sum(axis=0)
 
-y1 = ocean_cell_deg_prediff_3d.mean(axis=(0, 1))  # ocean temp without diff
-y2 = ocean_cell_deg_postdiff_3d.mean(axis=(0, 1))  # ocean temp + DIFF
-y3 = atmos_cell_deg_prediff_3d.mean(axis=(0, 1))  # atm temp without diff
-y4 = atmos_cell_deg_postdiff_3d.mean(axis=(0, 1))  # atm temp + DIFF
+y1 = oce_cell_deg_prediff.mean(axis=(0, 1))  # ocean temp without diff
+y2 = oce_cell_deg_postdiff.mean(axis=(0, 1))  # ocean temp + DIFF
+y3 = atm_cell_deg_prediff.mean(axis=(0, 1))  # atm temp without diff
+y4 = atm_cell_deg_postdiff.mean(axis=(0, 1))  # atm temp + DIFF
 
 print('ocean temp without diff: {}'.format(y1[N_TIME_STEPS - 1]))
 print('ocean temp + DIFF      : {}'.format(y2[N_TIME_STEPS - 1]))
@@ -503,26 +515,25 @@ print('atm temp + DIFF        : {}'.format(y4[N_TIME_STEPS - 1]))
 print(tseries_oa_mean_temp_area_weighted[N_TIME_STEPS - 1, :])
 
 
-plt.figure(2)
-plt.title('Model ocean and atmosphere temperature evolution over time')
+fig2, ax = plt.subplots(num='time plot')
+ax.set_title('Model ocean and atmosphere temperature evolution over time')
 x = np.arange('2001-09-21T12:00:00.0', my_date_london, dtype='datetime64[h]')
-
+x = x.astype(datetime)
 y5 = tseries_oa_mean_temp_area_weighted[0:-1, 0]
 y6 = tseries_oa_mean_temp_area_weighted[0:-1, 1]
 y7 = tseries_oa_mean_temp_area_weighted[0:-1, 2]
 y8 = tseries_oa_mean_temp_area_weighted[0:-1, 3]
 
-
-plt.plot(x, y5, 'b', linewidth=1.0, label='oceanNODIFF')
-plt.plot(x, y6, 'b--', linewidth=1.0, label='oceanDIFF')
-plt.plot(x, y7, 'r', linewidth=1.0, label='atmosNODIFF')
-plt.plot(x, y8, 'r--', linewidth=1.0, label='atmosDIFF')
-plt.legend(loc='lower right', prop={'size': 14})
-plt.ylabel('Temperature (Degrees C)')
-plt.xlabel('Time')
-# plt.show()
-show_plot()  # this is your function mcp!
-plt.close(1)
+ax.plot(x, y5, 'b', linewidth=1.0, label='oceanNODIFF')
+ax.plot(x, y6, 'b--', linewidth=1.0, label='oceanDIFF')
+ax.plot(x, y7, 'r', linewidth=1.0, label='atmosNODIFF')
+ax.plot(x, y8, 'r--', linewidth=1.0, label='atmosDIFF')
+ax.legend(loc='lower right', prop={'size': 14})
+ax.set_ylabel('Temperature (Degrees C)')
+ax.set_xlabel('Time')
+fig2.autofmt_xdate()
+plt.show()
+# show_plot()  # this is your function mcp!
 
 # AAA= np.array([[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]])
 # AAA=AAA[1:3,1:3]
